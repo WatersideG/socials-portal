@@ -81,17 +81,35 @@
   details{background:var(--bg);border:1px solid var(--line);padding:0;margin-top:14px}
   details summary{cursor:pointer;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);font-family:'Nord-Book','Jost',sans-serif}
   details .inner{padding:4px 18px 16px}
+  .card,details .inner{overflow-x:auto}
+  td{overflow-wrap:anywhere}
+  th{overflow-wrap:normal}
   @media(max-width:900px){.two{grid-template-columns:1fr}}
   @media(max-width:640px){
     header{padding:12px 16px}
     header h1{font-size:18px}
     .protobanner{padding:6px 16px}
     nav{padding:0 16px;gap:16px}
-    nav button{letter-spacing:1.5px;font-size:11px;padding:12px 0}
+    nav button{letter-spacing:.5px;font-size:10px;padding:11px 0}
     main{padding:14px 16px}
     .controls{width:100%}
     .controls select{flex:1 1 45%;min-width:0}
     #companySel{width:100%;flex-basis:100%}
+    .kpi .label{font-size:9px;letter-spacing:.8px}
+    .kpi .val{font-size:21px}
+    .kpi .sub2{font-size:10.5px}
+    .pill{font-size:8px;padding:2px 5px;letter-spacing:.4px}
+    .chtabs button{padding:6px 9px;font-size:9.5px;letter-spacing:.8px}
+    h2{font-size:14px}
+    h2 .note{font-size:11px}
+    .tldr{font-size:12.5px;padding:13px 14px}
+    table{font-size:11px}
+    th{font-size:9px;letter-spacing:.6px;padding:7px 5px}
+    td{padding:7px 5px}
+    details summary{font-size:9.5px;letter-spacing:.8px;padding:11px 12px}
+    .threes .card h3{letter-spacing:.8px;font-size:10.5px}
+    .algoweather{font-size:11px}
+    .foot,.caption{font-size:10.5px}
     .hero{grid-template-columns:1fr}
     .kpis{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
     .kpi .val{font-size:24px}
@@ -103,10 +121,11 @@
 </style>
 </head>
 <body>
+<div class="protobanner"><strong>PROTOTYPE</strong> — All company metrics, reviews, campaigns, revenue, and recommendations are illustrative unless a source reads LIVE in the Data Status panel.</div>
 <header>
   <div>
     <h1>Marketing Performance</h1>
-    <div class="sub">WATERSIDE GROUP · per-source sync status in Data Status panel</div>
+    <div class="sub">WATERSIDE GROUP · <span id="rangeInfo"></span></div>
   </div>
   <div class="controls">
     <select id="companySel" aria-label="Company"></select>
@@ -145,7 +164,7 @@
   <div id="view-demo" style="display:none"></div>
   <div id="view-ai" style="display:none"></div>
   <div class="foot">
-    <strong>How to read this portal:</strong> comparisons default to the same period last year, weekday-aligned; the selector switches to prior-period and every change names its baseline in words. The funnel never adds unlike measures — visibility, visits, intent, and outcomes are separate stages. Email opens are directional only. Meta figures are views-based (impressions retired Nov 2025). Ad results are never summed across platforms or objectives.
+    <strong>How to read this portal:</strong> comparisons default to the same period last year, weekday-aligned; the selector switches to prior-period and every change names its baseline in words. The funnel never adds unlike measures — visibility, visits, intent, and outcomes are separate stages. Email opens are directional only. Meta figures are views-based (impressions retired Nov 2025). Ad results are never summed across platforms or objectives. Benchmark provenance (tap-friendly): Rival IQ/Quid 2026 social medians · MailerLite 2025 email · Ruler Analytics 2026 conversion · WordStream/LocaliQ 2025 ads · Whitespark 2026 local — full citations in the spec appendix.
   </div>
 </main>
 
@@ -244,8 +263,8 @@ function mentionSourceDefs(b){
   {n:"LinkedIn",on:b.seg==="realestate",sug:"linkedin.com/company/"+s},
   {n:"BBB",on:false,sug:"bbb.org profile for "+b.n},
   {n:"Pinterest",on:b.seg==="realestate"||b.seg==="retail",sug:"pinterest.com — brand pins + tagged saves"},
-  {n:"Glassdoor",on:false,sug:"glassdoor.com employer reviews — hiring reputation"},
-  {n:"Indeed",on:false,sug:"indeed.com employer reviews — enable during hiring pushes"}
+  {n:"Glassdoor",on:false,emp:true,sug:"glassdoor.com employer reviews — hiring reputation"},
+  {n:"Indeed",on:false,emp:true,sug:"indeed.com employer reviews — enable during hiring pushes"}
  ];
 }
 const mentionSrcState={};
@@ -271,7 +290,17 @@ function period(){
  if(days===7)return{days,n:7,labels:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]};
  if(days===30)return{days,n:4,labels:["Wk 1","Wk 2","Wk 3","Wk 4"]};
  if(days===90)return{days,n:12,labels:Array.from({length:12},(_,i)=>"W"+(i+1))};
- return{days,n:7,labels:["Jan","Feb","Mar","Apr","May","Jun","Jul"]};
+ const now=new Date();const doy=Math.max(1,Math.ceil((now-new Date(now.getFullYear(),0,1))/864e5));
+ const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+ return{days:doy,n:now.getMonth()+1,labels:MO.slice(0,now.getMonth()+1)};
+}
+function rangeText(){
+ const days=period().days;const end=new Date();const start=new Date(end-(days-1)*864e5);
+ const f=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+ let cmp;
+ if(state.cmp==="yoy"){const s2=new Date(start);s2.setFullYear(s2.getFullYear()-1);const e2=new Date(end);e2.setFullYear(e2.getFullYear()-1);cmp=f(s2)+" – "+f(e2)+", "+e2.getFullYear()}
+ else{const e2=new Date(start-864e5);const s2=new Date(e2-(days-1)*864e5);cmp=f(s2)+" – "+f(e2)+", "+e2.getFullYear()}
+ return f(start)+" – "+f(end)+", "+end.getFullYear()+" · vs "+cmp;
 }
 
 /* ---------- Brand data: seeded per brand AND per range; volumes scale with days ---------- */
@@ -285,10 +314,11 @@ function brandDataRaw(b){
  const mult=(lo,hi)=>lo+r()*(hi-lo);
  const vm=()=>mult(.8,1.25);         /* volume variation kept narrow so 30d < 90d < YTD always holds */
  const dp=()=>mult(-4,8), dy=()=>mult(-8,22);
+ /* outcomes and spend carry their OWN comparisons — never proxied by sessions */
  const d={
   followers:{fb:Math.round(3200*scale*sm(.5,1.5)),ig:Math.round(4100*scale*sm(.5,1.6)),yt:Math.round(400*scale*sm(.3,1.4)),tt:Math.round(1500*scale*sm(.3,1.8))},
-  dPrior:{fb:dp(),ig:dp(),yt:dp(),tt:dp(),web:dp(),email:dp(),paid:dp(),gsc:dp(),local:dp()},
-  dYoY:{fb:dy(),ig:dy(),yt:dy(),tt:dy(),web:dy(),email:dy(),paid:dy(),gsc:dy(),local:dy()},
+  dPrior:{fb:dp(),ig:dp(),yt:dp(),tt:dp(),web:dp(),email:dp(),paid:dp(),gsc:dp(),local:dp(),outcome:dp()},
+  dYoY:{fb:dy(),ig:dy(),yt:dy(),tt:dy(),web:dy(),email:dy(),paid:dy(),gsc:dy(),local:dy(),outcome:dy()},
   posts:{fb:Math.round(12*f*vm()),ig:Math.round(15*f*vm()),yt:Math.round(3*f*vm()),tt:Math.round(8*f*vm()),blog:Math.round(3*f*vm()),email:Math.round(4*f*vm())},
   stories:Math.round(28*f*vm()),
   er:{fb:B.fbER*mult(.5,2.1),ig:B.igER*mult(.5,2.2),yt:0.21*mult(.5,2),tt:B.ttER*mult(.4,2.3)},
@@ -307,13 +337,14 @@ function brandDataRaw(b){
  d.web.keyEvents=Math.round(d.web.sessions*d.conv.web/100);
  d.local.unanswered=Math.max(0,Math.round(d.local.vel30*(1-d.local.respRate/100)*0.5));
  d.web.bookviews=Math.round(d.web.sessions*0.07);
- d.feeds={GA4:true,GSC:true,Meta:true,GBP:(hash(b.n)%10)>1,Toast:TOAST_BRANDS.test(b.n)};
- d.completeness=Math.round(Object.values(d.feeds).filter(Boolean).length/5*100);
+ d.feeds={GA4:"sample",GSC:"sample",Meta:"sample",GBP:(hash(b.n)%10)>1?"sample":"missing",Toast:TOAST_BRANDS.test(b.n)?"sample":"unavailable"};
+ d.liveFeeds=Object.values(d.feeds).filter(v=>v==="connected").length;
+ d.completeness=Math.round(d.liveFeeds/5*100); /* only CONNECTED counts — sample never scores */
  return d;
 }
 /* True portfolio rollup: aggregated from company records (sums; denominator-weighted rates; review-weighted rating) */
 function portfolioData(){
- const parts=BRANDS.filter(x=>x.seg!=="portfolio").map(x=>({b:x,d:brandDataRaw(x)}));
+ const parts=BRANDS.filter(x=>x.seg!=="portfolio").map(x=>{const d=brandDataRaw(x);d.spend=campaigns(x).reduce((a,c)=>a+c.spent,0);return {b:x,d}});
  const P=period();
  const sum=f=>parts.reduce((a,p)=>a+f(p.d),0);
  const wavg=(vf,wf)=>{const W=sum(wf)||1;return parts.reduce((a,p)=>a+vf(p.d)*wf(p.d),0)/W};
@@ -323,7 +354,7 @@ function portfolioData(){
   parts.forEach(p=>{const m=wf(p.d);const dl=(mode==="yoy"?p.d.dYoY:p.d.dPrior)[key];cur+=m;prior+=m/(1+dl/100)});
   return (cur/prior-1)*100;
  };
- const W={fb:d=>d.followers.fb,ig:d=>d.followers.ig,yt:d=>d.followers.yt,tt:d=>d.followers.tt,web:d=>d.web.sessions,email:d=>d.email.list,gsc:d=>d.gsc.clicks,local:d=>d.local.calls+d.local.directions,paid:d=>d.web.sessions};
+ const W={fb:d=>d.followers.fb,ig:d=>d.followers.ig,yt:d=>d.followers.yt,tt:d=>d.followers.tt,web:d=>d.web.sessions,email:d=>d.email.list,gsc:d=>d.gsc.clicks,local:d=>d.local.calls+d.local.directions,paid:d=>d.spend,outcome:d=>d.web.keyEvents};
  const mk=mode=>Object.fromEntries(Object.keys(W).map(k=>[k,aggDelta(mode,k,W[k])]));
  const d={
   isPortfolio:true,parts,
@@ -342,8 +373,9 @@ function portfolioData(){
   aio:{sov:wavg(x=>x.aio.sov,x=>x.gsc.impr),mention:sum(x=>x.aio.mention),cited:Math.round(wavg(x=>x.aio.cited,()=>1))},
   local:{rating:wavg(x=>x.local.rating,x=>x.local.reviews),reviews:sum(x=>x.local.reviews),vel30:sum(x=>x.local.vel30),respRate:wavg(x=>x.local.respRate,x=>x.local.reviews),calls:sum(x=>x.local.calls),directions:sum(x=>x.local.directions),respHrs:Math.round(wavg(x=>x.local.respHrs,x=>x.local.reviews)),unanswered:sum(x=>x.local.unanswered)},
   trend:{engage:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.engage[i])),sessions:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.sessions[i])),gscClicks:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.gscClicks[i])),gscImpr:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.gscImpr[i])),actions:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.actions[i]))},
-  feeds:{GA4:true,GSC:true,Meta:true,GBP:parts.every(p=>p.d.feeds.GBP),Toast:false},
-  completeness:Math.round(parts.reduce((a,p)=>a+p.d.completeness,0)/parts.length)
+  feeds:{GA4:"sample",GSC:"sample",Meta:"sample",GBP:"sample",Toast:"unavailable"},
+  liveFeeds:0,
+  completeness:0
  };
  d.conv.web=d.web.keyEvents/d.web.sessions*100;
  return d;
@@ -352,7 +384,7 @@ function brandData(b){return b.seg==="portfolio"?portfolioData():brandDataRaw(b)
 
 /* ---------- Campaigns ---------- */
 function campaigns(b){
- const r=rng(hash(b.n+"paid"));const B=BENCH[b.seg];
+ const r=rng(hash(b.n+"paid"+period().days));const B=BENCH[b.seg];
  const mult=(lo,hi)=>lo+r()*(hi-lo);
  const slug=b.n.toLowerCase().replace(/[^a-z]+/g,"").slice(0,10);
  const objs=b.seg==="dining"?[["Calls","calls"],["Traffic","visits"],["Awareness","reached"]]
@@ -406,7 +438,7 @@ function revData(b){
 
 /* ---------- Mentions & demographics ---------- */
 function mentionData(b){
- const enabled=mentionSources(b).filter(x=>x.on).map(x=>x.n);
+ const enabled=mentionSources(b).filter(x=>x.on&&!x.emp).map(x=>x.n); /* employer sources are tracked separately — never blended into customer sentiment */
  if(!enabled.length)return{enabled,weekly:[],recent:[],total:0,pos:0,neg:0};
  const r=rng(hash(b.n+"mentions"+enabled.join("")));const mult=(lo,hi)=>lo+r()*(hi-lo);
  const scale=b.seg==="portfolio"?10:(0.4+r()*2);
@@ -463,27 +495,31 @@ function spark(data,color){
 }
 /* metric card; optional status chip only for exceptional states (e.g. unavailable) */
 function kpi(label,val,deltaHtml,benchHtml,sub,sparkHtml,small,src){
- const chip=src&&src!=="sample"?`<span class="pill sample">${src}</span>`:"";
+ const chip=`<span class="pill sample">${src||"sample"}</span>`;
  return `<div class="card kpi ${small?"small":""}"><div class="label"><span>${label}</span><span style="display:flex;gap:4px">${benchHtml||""}${chip}</span></div><div class="val">${val}</div>${deltaHtml||""}${sub?`<div class="sub2">${sub}</div>`:""}${sparkHtml||""}</div>`;
 }
 let charts=[];
 function destroyCharts(){charts.forEach(c=>c.destroy());charts=[]}
 function lineChart(id,labels,datasets){
  const el=document.getElementById(id);if(!el)return;
+ el.setAttribute("role","img");el.setAttribute("aria-label",datasets.map(x=>x.label).join(", ")+" — line chart");
  charts.push(new Chart(el,{type:"line",data:{labels,datasets:datasets.map(d=>({...d,tension:.35,borderWidth:2.5,pointRadius:0,fill:d.fill??false}))},
  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11,family:"Jost"}}}},scales:{y:{grid:{color:"#eef1f4"},ticks:{font:{size:10.5,family:"Jost"}}},x:{grid:{display:false},ticks:{font:{size:10.5,family:"Jost"}}}}}}));
 }
 function barChart(id,labels,datasets,stacked){
  const el=document.getElementById(id);if(!el)return;
+ el.setAttribute("role","img");el.setAttribute("aria-label",datasets.map(x=>x.label).join(", ")+" — bar chart");
  charts.push(new Chart(el,{type:"bar",data:{labels,datasets},
  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:10.5,family:"Jost"}}}},scales:{x:{stacked:!!stacked,grid:{display:false},ticks:{font:{size:10.5,family:"Jost"}}},y:{stacked:!!stacked,grid:{color:"#eef1f4"},ticks:{font:{size:10.5,family:"Jost"}}}}}}));
 }
 const ALGO_WEATHER=`<strong>Algorithm weather:</strong> no Google update currently rolling out. 2026 confirmed so far: <a href="https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history" style="color:var(--steel)">March core (Mar 27–Apr 8), March spam, May core (May 21–Jun 2)</a>. Dips inside those windows were industry-wide — judge search changes outside them.`;
 function dataStatus(d){
- const rows=[["Google Analytics 4","pending","—"],["Google Search Console","pending","—"],["Meta Business Suite","pending","—"],["Google Business Profile",d.feeds.GBP?"pending":"unavailable — connect",d.feeds.GBP?"—":"apply for API access"],["Toast POS",d.feeds.Toast?"pending":"unavailable — no POS",d.feeds.Toast?"—":"n/a for this brand"],["Monthly P&L import","unavailable — awaiting first upload","upload monthly from accounting; maps lines to revenue centers"],["Email platform","pending","—"],["Reviews (Google/Yelp/TripAdvisor)","pending","—"]];
- return `<details><summary>Data status by source</summary><div class="inner"><table><thead><tr><th>Source</th><th>Status</th><th>Last successful sync</th><th>Note</th></tr></thead><tbody>
- ${rows.map(r=>`<tr><td>${r[0]}</td><td><span class="pill ${r[1].startsWith("unavailable")?"below":"sample"}">${r[1].split(" — ")[0]}</span></td><td>${r[1].startsWith("unavailable")?"never":"pending connection"}</td><td>${r[2]}</td></tr>`).join("")}
- </tbody></table><div class="caption">In production every metric shows LIVE with its source's last sync time; anything else renders as "insufficient data" rather than a colored judgment.</div></div></details>`;
+ const LBL={connected:["above","LIVE"],stale:["at","STALE"],sample:["sample","SAMPLE"],missing:["at","MISSING"],unavailable:["below","UNAVAILABLE"]};
+ const rows=[["Google Analytics 4",d.feeds.GA4],["Google Search Console",d.feeds.GSC],["Meta Business Suite",d.feeds.Meta],["Google Business Profile",d.feeds.GBP],["Toast POS",d.feeds.Toast],["Monthly P&L import","missing"],["Email platform","sample"],["Reviews (Google/Yelp/TripAdvisor)","sample"]];
+ const live=rows.filter(r=>r[1]==="connected").length;
+ return `<details><summary>Data status by source — ${live} of ${rows.length} live · completeness ${d.completeness}%</summary><div class="inner"><table><thead><tr><th>Source</th><th>Status</th><th>Last successful sync</th></tr></thead><tbody>
+ ${rows.map(r=>{const L=LBL[r[1]]||LBL.sample;return `<tr><td>${r[0]}</td><td><span class="pill ${L[0]}">${L[1]}</span></td><td>${r[1]==="connected"?"—":"never"}</td></tr>`}).join("")}
+ </tbody></table><div class="caption"><strong>Status model:</strong> LIVE = connected with a recent sync · STALE = connected, sync outside SLA · SAMPLE = illustrative values · MISSING = expected but not connected · UNAVAILABLE = integration not supported for this brand. <strong>Only LIVE counts toward completeness</strong> — sample data never produces a green status, and nothing on this screen should drive a decision until its source reads LIVE.</div></div></details>`;
 }
 
 /* ---------- TL;DR ---------- */
@@ -494,7 +530,7 @@ function tldr(b,d){
  const best=chans[0],worst=chans[chans.length-1];
  const dir=getD(d,"web")>=0?"up":"down";
  const name=b.n==="Portfolio Rollup"?"The portfolio":b.n;
- return `<b>${name}:</b> demand is <b>${dir} ${Math.abs(getD(d,"web")).toFixed(0)}%</b> ${cmpLabel()}, with ${fmt(d.web.keyEvents)} ${B.result} and a ${d.local.rating.toFixed(1)}★ Google rating (${d.local.vel30} new reviews/30 days${d.local.unanswered?`, <b>${d.local.unanswered} negative unanswered</b>`:""}).
+ return `<b>${name}:</b> demand is <b>${dir} ${Math.abs(getD(d,"web")).toFixed(0)}%</b> ${cmpLabel()}, with ${fmt(d.web.keyEvents)} ${B.result} and a ${d.local.rating.toFixed(1)}★ Google rating (${d.local.vel30} new reviews/30 days${d.local.unanswered?`, <b>≈${d.local.unanswered} est. unanswered</b>`:""}).
  <b>Working:</b> ${best[0]} ${best[1]>=1?"is beating":"is near"} its industry median. <b>Concern:</b> ${worst[0]} is ${Math.round((1-worst[1])*100)>0?Math.round((1-worst[1])*100)+"% below":"at"} median.
  <b>Next move:</b> ${d.local.unanswered>2?"clear the unanswered reviews today":d.aio.cited<4?"win AI citations — only "+d.aio.cited+" of 12 tracked “best of” questions mention us":"shift one weekly static post to people-on-camera video"}.`;
 }
@@ -504,21 +540,22 @@ function renderOwnerHome(d){
  const el=document.getElementById("view-exec");
  const rowsData=d.parts.map(p=>{
   const x=p.d;
-  const outcome=getD(x,"web");
+  const outcome=getD(x,"outcome");
   const demand=getD(x,"gsc");
-  const plan=Math.round(26*period().days/30);
+  const planMap={dining:34,hospitality:26,realestate:12,marine:10,retail:18};
+  const plan=Math.max(1,Math.round((planMap[p.b.seg]||24)*period().days/30));
   const activity=Math.round((x.posts.ig+x.posts.fb+x.posts.tt)/plan*100);
   const paid=paidIssues(p.b);
   const repRisk=x.local.rating<4.3||x.local.unanswered>2;
   let sev=0;
-  if(repRisk)sev+=3;if(outcome<0)sev+=2;if(demand<0)sev+=1;if(paid>0)sev+=1;if(activity<70)sev+=1;if(x.completeness<80)sev+=1;
+  if(repRisk)sev+=3;if(outcome<0)sev+=2;if(demand<0)sev+=1;if(paid>0)sev+=1;if(activity<70)sev+=1;/* completeness excluded from severity until live feeds exist */
   let action="Stay the course";
   if(repRisk)action=`Respond to ${x.local.unanswered} unanswered reviews today`;
   else if(outcome<0&&demand>=0)action="Demand is fine, conversion leaking — check booking path";
   else if(demand<0)action="Rebuild visibility: content + Business Profile";
   else if(paid>0)action=`Fix ${paid} campaign${paid>1?"s":""} (pacing/creative)`;
   else if(activity<70)action=`Publish to plan (at ${activity}%)`;
-  else if(x.completeness<80)action="Connect missing data feeds";
+  else if(x.liveFeeds===0)action="Connect live data feeds";
   return {b:p.b,x,outcome,demand,activity,paid,repRisk,sev,action};
  }).sort((a,c)=>c.sev-a.sev);
  const attention=rowsData.filter(r=>r.sev>=3).length;
@@ -529,14 +566,13 @@ function renderOwnerHome(d){
  /* top five decisions from the worst signals */
  const dec=[];
  const worstRep=rowsData.find(r=>r.repRisk);
- if(worstRep)dec.push({d:`Respond to ${worstRep.x.local.unanswered} unanswered reviews at ${worstRep.b.n}; invite recent happy guests`,o:"Location mgr",due:"Today",i:"Protect local + AI discovery"});
+ if(worstRep)dec.push({d:`Verify and clear the estimated review backlog (≈${worstRep.x.local.unanswered}) at ${worstRep.b.n}; invite recent happy guests`,o:"Location mgr",due:"Today",i:`protects ≈${fmt(worstRep.x.local.calls*3)} calls/mo of local demand`,cf:"Medium — estimate"});
  const worstPaid=[...rowsData].sort((a,c)=>c.paid-a.paid)[0];
- if(worstPaid&&worstPaid.paid>0)dec.push({d:`Fix ${worstPaid.paid} campaigns at ${worstPaid.b.n} — pacing or fatigued creative`,o:"Paid media",due:"This week",i:"Stop wasted spend"});
- if(opps[0])dec.push({d:`Launch a content series for ${opps[0].c} at ${opps[0].brand} (demand outruns revenue by ${opps[0].gap} pts)`,o:"Content",due:"2 weeks",i:"Under-promoted revenue"});
+ if(worstPaid&&worstPaid.paid>0){const risk=campaigns(worstPaid.b).filter(c=>{const pp=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(pp-1)>0.15||c.freq>=3.5}).reduce((a,c)=>a+c.spent,0);dec.push({d:`Fix ${worstPaid.paid} campaigns at ${worstPaid.b.n} — pacing or fatigued creative`,o:"Paid media",due:"This week",i:`$${fmt(risk)} of flight-to-date spend at risk`,cf:"High"});}
+ if(opps[0])dec.push({d:`Launch a content series for ${opps[0].c} at ${opps[0].brand} (demand outruns revenue by ${opps[0].gap} pts)`,o:"Content",due:"2 weeks",i:`est. +${Math.max(2,Math.round(opps[0].gap/4))}% center revenue if gap closes`,cf:"Low–medium"});
  const worstAct=[...rowsData].sort((a,c)=>a.activity-c.activity)[0];
- if(worstAct)dec.push({d:`Restore posting cadence at ${worstAct.b.n} (at ${worstAct.activity}% of plan)`,o:"Social",due:"This week",i:"Reach recovery"});
- const worstData=[...rowsData].sort((a,c)=>a.x.completeness-c.x.completeness)[0];
- if(worstData)dec.push({d:`Connect missing data feeds for ${worstData.b.n} (${worstData.x.completeness}% complete)`,o:"Admin",due:"This month",i:"Trustworthy reporting"});
+ if(worstAct)dec.push({d:`Restore posting cadence at ${worstAct.b.n} (at ${worstAct.activity}% of its segment plan)`,o:"Social",due:"This week",i:`recover ≈${fmt(worstAct.x.followers.ig*0.3)} monthly reach`,cf:"Medium"});
+ dec.push({d:"Connect the first live feeds (GA4 + Search Console) — every number here is demo until then",o:"Admin",due:"This month",i:"truthful reporting unlocks all other decisions",cf:"High"});
  el.innerHTML=`
   <div class="tldr"><b>Portfolio pulse:</b> ${fmt(d.web.keyEvents)} qualified outcomes and ${fmt(d.local.calls)} calls this period (${getD(d,"web")>=0?"+":""}${getD(d,"web").toFixed(0)}% ${cmpLabel()}), reputation ${d.local.rating.toFixed(1)}★ review-weighted across ${fmt(d.local.reviews)} reviews.
   <b>${attention} of ${rowsData.length} companies need attention</b> — the exception table below says which and why, so you never open 24 profiles to find three problems.</div>
@@ -545,26 +581,26 @@ function renderOwnerHome(d){
    ${kpi("Seen — visibility",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Search appearances (sum). AI mentions tracked separately: "+fmt(d.aio.mention),spark(d.trend.gscImpr))}
    ${kpi("Visited — interest",fmt(d.web.sessions),delta(getD(d,"web")),"","Website sessions (sum), "+pct(d.web.engRate,0)+" engaged",spark(d.trend.sessions))}
    ${kpi("Intent shown",fmt(d.local.directions),delta(getD(d,"local")),"","Direction requests. Booking-page views separate: "+fmt(d.web.bookviews),spark(d.trend.actions))}
-   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"web")),pill(d.conv.web,BENCH.portfolio.webConv),BENCH.portfolio.result+" (sum). Calls separate: "+fmt(d.local.calls),spark(d.trend.actions))}
+   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"outcome")),pill(d.conv.web,BENCH.portfolio.webConv),"Named per company in the table below. Calls separate: "+fmt(d.local.calls),spark(d.trend.actions))}
   </div>
   <div class="caption" style="margin-top:6px">Funnel stages are never added together — each stage keeps its own unit. Rollup math: counts summed; rates denominator-weighted; rating review-count-weighted; changes computed from aggregate current vs aggregate prior totals.</div>
   <h2>Company exceptions <span class="note">sorted by severity — worst first · ${cmpLabel()}</span></h2>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Company</th><th>Outcomes</th><th>Reputation</th><th>Activity vs plan</th><th>Paid health</th><th>Demand trend</th><th>Data</th><th>Recommended action</th></tr></thead><tbody>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Company</th><th>Outcomes</th><th>Reputation</th><th>Activity vs plan <span style="font-weight:400">(per-segment target)</span></th><th>Paid health</th><th>Demand trend</th><th>Data</th><th>Recommended action</th></tr></thead><tbody>
   ${rowsData.map(r=>`<tr>
    <td><strong>${r.b.n}</strong><div class="sub2" style="font-size:10.5px;color:var(--muted)">${SEGLABEL[r.b.seg]}</div></td>
-   <td class="${r.outcome>=0?"up":"down"}">${fmt(r.x.web.keyEvents)} · ${r.outcome>=0?"+":""}${r.outcome.toFixed(0)}%</td>
-   <td>${r.x.local.rating.toFixed(1)}★${r.x.local.unanswered?` · <span class="pill below">${r.x.local.unanswered} unanswered</span>`:""}</td>
+   <td class="${r.outcome>=0?"up":"down"}">${fmt(r.x.web.keyEvents)} ${BENCH[r.b.seg].result} · ${r.outcome>=0?"+":""}${r.outcome.toFixed(0)}%</td>
+   <td>${r.x.local.rating.toFixed(1)}★${r.x.local.unanswered?` · <span class="pill at">≈${r.x.local.unanswered} est. unanswered</span>`:""}</td>
    <td class="${r.activity>=70?"":"down"}">${r.activity}%</td>
    <td>${r.paid===0?'<span class="pill above">OK</span>':`<span class="pill ${r.paid>1?"below":"at"}">${r.paid} issue${r.paid>1?"s":""}</span>`}</td>
    <td class="${r.demand>=0?"up":"down"}">${r.demand>=0?"+":""}${r.demand.toFixed(0)}%</td>
-   <td>${r.x.completeness<80?`<span class="pill at">${r.x.completeness}%</span>`:r.x.completeness+"%"}</td>
+   <td><span class="pill sample">${r.x.liveFeeds}/5 live</span></td>
    <td class="sub2">${r.action}</td></tr>`).join("")}
   </tbody></table></div>
   <div class="grid two" style="margin-top:14px">
    <div class="card"><h2 style="margin-top:0;font-size:15px">Top five decisions this week</h2>
-   <table><thead><tr><th>Decision</th><th>Owner</th><th>Due</th><th>Expected impact</th><th>Status</th></tr></thead><tbody>
-   ${dec.slice(0,5).map(x=>`<tr><td><strong>${x.d}</strong></td><td>${x.o}</td><td>${x.due}</td><td>${x.i}</td><td><span class="pill info">Open</span></td></tr>`).join("")}
-   </tbody></table></div>
+   <table><thead><tr><th>Decision</th><th>Assignee</th><th>Due</th><th>Expected impact</th><th>Confidence</th><th>Status</th></tr></thead><tbody>
+   ${dec.slice(0,5).map((x,i)=>`<tr><td><strong>${x.d}</strong></td><td><select data-deca="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM","Marketing lead"].map(o=>`<option ${decState[d0k(x)]&&decState[d0k(x)].a===o?"selected":""}>${o}</option>`).join("")}</select></td><td>${x.due}</td><td>${x.i}</td><td>${x.cf}</td><td><select data-decs="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done","Rejected"].map(o=>`<option ${decState[d0k(x)]&&decState[d0k(x)].s===o?"selected":""}>${o}</option>`).join("")}</select></td></tr>`).join("")}
+   </tbody></table><div class="caption">Assignments and statuses persist for this session; production stores them with an audit trail and measures each decision's result after 30 days.</div></div>
    <div class="card"><h2 style="margin-top:0;font-size:15px">Portfolio opportunities</h2>
    <div class="insight idea"><span class="tag">Cross-brand</span><h3>"One perfect day" itinerary packages</h3><p>Dining, stay, and activity brands share the same visitor — packaged itineraries (Snowfish dinner + South Peak stay + Alpine Adventures) convert shared audiences no single brand can.</p></div>
    <div class="insight idea"><span class="tag">Audience overlap</span><h3>Cross-brand retargeting pools</h3><p>Website visitors of one Lincoln brand are warm audiences for the others; shared Meta custom audiences cut acquisition cost across the NH cluster.</p></div>
@@ -588,7 +624,7 @@ function renderExec(b,d){
    ${kpi("Seen — visibility",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Search appearances. AI mentions tracked separately: "+fmt(d.aio.mention),spark(d.trend.gscImpr))}
    ${kpi("Visited — interest",fmt(d.web.sessions),delta(getD(d,"web")),"","Website sessions, "+pct(d.web.engRate,0)+" engaged",spark(d.trend.sessions))}
    ${kpi("Intent shown",fmt(d.local.directions),delta(getD(d,"local")),"","Direction requests. Booking-page views separate: "+fmt(d.web.bookviews),spark(d.trend.actions))}
-   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"web")),pill(d.conv.web,B.webConv),B.result.charAt(0).toUpperCase()+B.result.slice(1)+". Calls tracked separately: "+fmt(d.local.calls),spark(d.trend.actions))}
+   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"outcome")),pill(d.conv.web,B.webConv),B.result.charAt(0).toUpperCase()+B.result.slice(1)+". Calls tracked separately: "+fmt(d.local.calls),spark(d.trend.actions))}
   </div>
   <div class="caption" style="margin-top:6px">The funnel keeps each stage in its own unit — nothing here is added across unlike measures. Where demand leaks is visible stage to stage.</div>
   <div class="grid two" style="margin-top:12px">
@@ -627,7 +663,7 @@ function execInsights(b,d){
  const ev="Illustrative in prototype — in production this card links the posts compared, sample size, period, and outcome metric.";
  const out=[];
  out.push({cls:"",tag:"Working",h:"Video with people beats product-only",p:`Across ${name}, posts with staff or guests on camera earned about ${(2.1+d.er.ig).toFixed(1)}x the engagement of product-only posts this period.`,ev});
- if(d.local.unanswered>2) out.push({cls:"alert",tag:"Needs attention",h:d.local.unanswered+" negative reviews are sitting unanswered",p:`Median response time is ${d.local.respHrs}h. Respond within 24 hours and take issues offline — response rate and speed feed both rankings and guest trust.`,ev:"From review-platform data; each review links directly to its reply screen in production."});
+ if(d.local.unanswered>2) out.push({cls:"alert",tag:"Needs attention",h:"≈"+d.local.unanswered+" negative reviews estimated unanswered",p:`Estimated from review velocity × response rate — verify in the review console before acting. Median response time is ${d.local.respHrs}h. Respond within 24 hours and take issues offline — response rate and speed feed both rankings and guest trust.`,ev:"From review-platform data; each review links directly to its reply screen in production."});
  else if(d.local.rating<4.4) out.push({cls:"alert",tag:"Needs attention",h:"Google rating is below the 4.4★ practitioner threshold",p:`At ${d.local.rating.toFixed(1)}★, AI-driven recommendation analyses (Pluspoint, 2025) suggest discovery suffers. This is a practitioner finding, not a Google rule. Respond to every review; invite happy guests — no quotas, no scripts.`,ev});
  else out.push({cls:"alert",tag:"Needs attention",h:"Seen more, clicked less",p:`Search appearances are growing faster than clicks. ${d.aio.cited} of 12 tracked "best of" questions cite this brand in AI answers; Seer Interactive (2025) measured cited brands earning ~35% more organic clicks than uncited ones.`,ev});
  out.push({cls:"idea",tag:"Next move",h:seasonIdea(b),p:`Based on seasonal demand curves, this brand's stronger formats, and Rival IQ 2025 data showing carousels out-engaging Reels in most industries.`,ev});
@@ -853,7 +889,7 @@ function renderChannel(b,d,ch){
   const needResp=[["2 days ago","2★","“Waited 40 minutes past our reservation…”",true],["4 days ago","3★","“Great location, service was slow at the bar.”",false],["6 days ago","1★","“Charged incorrectly, still no reply.”",true]].slice(0,Math.max(1,Math.min(3,d.local.unanswered)));
   body=`<div class="grid kpis">
    ${kpi("Google rating",d.local.rating.toFixed(1)+"★",delta(getD(d,"local")),pill(d.local.rating,4.4,"Practitioner AI-discovery threshold (Pluspoint) — not a Google rule"),"Review-weighted",null,true)}
-   ${kpi("Unanswered negatives",d.local.unanswered,"",d.local.unanswered>2?'<span class="pill below">Act today</span>':"","Every negative review answered within 24h",null,true)}
+   ${kpi("Est. unanswered negatives","≈"+d.local.unanswered,"",d.local.unanswered>2?'<span class="pill at">Verify</span>':"","Estimated from velocity × response rate — verify against actual review records below",null,true)}
    ${kpi("Median response time",d.local.respHrs+"h","",pill(48-d.local.respHrs,24,"24h response SLA"),"Target: under 24 hours",null,true)}
    ${kpi("New reviews, 30 days",d.local.vel30,delta(getD(d,"local")),"","Velocity beats total count for rankings",null,true)}
    ${kpi("Review response rate",pct(d.local.respRate,0),"",pill(d.local.respRate,80,"Practitioner response-rate target"),null,null,true)}
@@ -861,21 +897,24 @@ function renderChannel(b,d,ch){
    ${kpi("Direction requests",fmt(d.local.directions),delta(getD(d,"local")),"",null,null,true)}
    ${kpi("Third-party presence",Math.round(2+d.aio.cited)+" mentions","","","Reddit, TripAdvisor, best-of lists — where AI looks",null,true)}</div>
    <h2>Reviews needing a response <span class="note">each review links to its reply screen; sentiment labels are human-correctable</span></h2>
-   <div class="card"><table><thead><tr><th>When</th><th>Rating</th><th>Excerpt</th><th>Priority</th><th>Action</th></tr></thead><tbody>
-   ${needResp.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td><td>${x[3]?'<span class="pill below">Escalate</span>':'<span class="pill at">Respond</span>'}</td><td class="sub2">Open in Google Business Profile → reply${x[3]?" + flag to manager":""}</td></tr>`).join("")}
+   <div class="card"><table><thead><tr><th>When</th><th>Rating</th><th>Excerpt</th><th>Respond by</th><th>Priority</th><th>Owner</th><th>Action</th></tr></thead><tbody>
+   ${needResp.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td><td><span class="pill ${x[0].includes("2 days")||x[0].includes("Yesterday")?"at":"below"}">${x[0].includes("2 days")||x[0].includes("Yesterday")?"24h SLA":"Overdue"}</span></td><td>${x[3]?'<span class="pill below">Escalate</span>':'<span class="pill at">Respond</span>'}</td><td class="sub2">Location mgr</td><td class="sub2">Open in Google Business Profile → reply${x[3]?" + flag to manager":""}</td></tr>`).join("")}
    </tbody></table>
    <div class="caption"><strong>Recurring themes</strong> — positive: ${themesPos}. Negative: ${themesNeg}. Themes are AI-labeled with confidence scores in production and can be corrected by a human — a generated label never silently becomes the reputation record.</div></div>
    <p class="foot">Profile signals ≈ 32% of local ranking, reviews ≈ 20% (Whitespark 2026). Compliance: no staff review quotas, no employee-name requests (Google policy, April 2026); fake or incentivized reviews remain banned.</p>`;
  }
  let mn=null;
- if(ch==="Mentions"){
+ if(ch==="Mentions"&&b.seg==="portfolio"){
+  body=`<div class="card"><h2 style="margin-top:0">Portfolio mentions rollup is not yet available</h2><p style="font-size:13px;line-height:1.6">Cross-company mention aggregation arrives with live source connections. Select a company.</p></div>`;
+ }
+ else if(ch==="Mentions"){
   mn=mentionData(b);
   const srcs=mentionSources(b);
   const mgr=state.mode==="admin"?`
   <h2>Mention &amp; review sources <span class="note">these feed this tab and Local &amp; Reviews — they don't need their own tabs</span></h2>
   <div class="card"><table><thead><tr><th>Track</th><th>Source</th><th>Specific URLs / pages</th></tr></thead><tbody>
   ${srcs.map((s,i)=>`<tr><td><input type="checkbox" data-msrc="${i}" ${s.on?"checked":""} aria-label="Track ${s.n}"></td><td><strong>${s.n}</strong></td><td><input data-murl="${i}" value="${s.url.replace(/"/g,"&quot;")}" placeholder="${s.sug.replace(/"/g,"&quot;")}" aria-label="URLs for ${s.n}" style="width:100%;border:1px solid var(--line);padding:6px;font-family:inherit;font-size:12px"></td></tr>`).join("")}
-  </tbody></table><div class="caption">Suggestions are pre-filled per brand and region — replace with exact group, board, thread, or profile URLs. Employer-review sources (Glassdoor, Indeed) guard hiring reputation; enable them during hiring pushes.</div></div>`
+  </tbody></table><div class="caption">Suggestions are pre-filled per brand and region — replace with exact group, board, thread, or profile URLs. Employer-review sources (Glassdoor, Indeed) are tracked separately and never blended into customer sentiment totals.</div></div>`
   :`<div class="caption" style="margin-top:12px"><strong>Tracking ${srcs.filter(x=>x.on).length} of ${srcs.length} available sources:</strong> ${srcs.filter(x=>x.on).map(x=>x.n).join(" · ")||"none"}. Sources and specific URLs (Facebook Groups, subreddits, local magazines, Nextdoor, Houzz, BBB, Glassdoor, Indeed…) are managed in Admin view.</div>`;
   const sentPill=s=>s==="Positive"?'<span class="pill above">Positive</span>':s==="Negative"?'<span class="pill below">Negative</span>':'<span class="pill info">Neutral</span>';
   body=`<div class="grid hero">
@@ -884,7 +923,7 @@ function renderChannel(b,d,ch){
    ${kpi("Negative",pct(mn.neg,0),"","","Above ~10% needs a response plan",null,true)}
    ${kpi("Top source",mn.enabled.length?mn.enabled[mn.weekly.map(w=>w.reduce((a,c)=>a+c,0)).indexOf(Math.max(...mn.weekly.map(w=>w.reduce((a,c)=>a+c,0))))]:"—","","","Where people talk about us most",null,true)}
   </div>
-  <div class="card" style="margin-top:14px"><h2 style="margin-top:0;font-size:15px">Who's talking about us, and where <span class="note">weekly mentions by source, 6 weeks</span></h2><div class="chartbox"><canvas id="chChart"></canvas></div>
+  <div class="card" style="margin-top:14px"><h2 style="margin-top:0;font-size:15px">Who's talking about us, and where <span class="note">weekly mentions by source, trailing 6 weeks — not affected by the global date range</span></h2><div class="chartbox"><canvas id="chChart"></canvas></div>
   <div class="caption">Sources matter more than counts: AI engines build dining and lodging recommendations mostly from Reddit, Google Maps, and review platforms. Feeds: review APIs, Instagram/Facebook tags, F5Bot (free Reddit alerts), Brand24 or Ahrefs Brand Radar for press.</div></div>
   <h2>Most recent mentions <span class="note">pulled from the configured sources below, with a link to each mention</span></h2>
   <div class="card"><table><thead><tr><th>When</th><th>Source</th><th>What was said</th><th>Sentiment</th><th>Suggested move</th></tr></thead><tbody>
@@ -947,7 +986,7 @@ function renderComp(b,d){
  if(!gaps.length)gaps.push("we lead or match the set on posting, engagement, and reviews — protect the lead");
  el.innerHTML=`
   <div class="tldr"><b>Competitive read:</b> ${gaps.join("; ")}.</div>
-  <h2 style="margin-top:0">${b.n} vs its market <span class="note">public data only · updated monthly</span></h2>
+  <h2 style="margin-top:0">${b.n} vs its market <span class="note">public data only · updated monthly — not affected by the global date range</span></h2>
   <div class="card" style="overflow-x:auto"><table><thead><tr><th>Business</th><th>Instagram followers</th><th>Growth / month</th><th>Posts / week</th><th>Engagement</th><th>Google rating</th><th>New reviews / 30d</th><th>Active Meta ads</th></tr></thead><tbody>
   ${all.map((r,i)=>`<tr class="${i===0?"hl":""}"><td>${r.n}</td><td>${fmt(r.ig)}</td><td class="${r.gr>0?"up":"down"}">${r.gr>0?"+":""}${r.gr.toFixed(1)}%</td><td>${r.pw.toFixed(1)}</td><td>${pct(r.er)}</td><td>${r.rating.toFixed(1)}★</td><td>${r.vel}</td><td>${r.ads}</td></tr>`).join("")}
   </tbody></table>
@@ -962,8 +1001,11 @@ function renderComp(b,d){
 /* ---------- Paid: per-objective economics, no blended CPR ---------- */
 function renderPaid(b,d){
  const el=document.getElementById("view-paid");
- const cams=campaigns(b);
+ let cams,agg=false,allCount=0;
+ if(b.seg==="portfolio"){agg=true;cams=[];BRANDS.filter(x=>x.seg!=="portfolio").forEach(x=>campaigns(x).forEach(c=>cams.push({...c,brand:x.n})));allCount=cams.length;cams.sort((a,c)=>c.spent-a.spent);}
+ else cams=campaigns(b);
  const totSpend=cams.reduce((a,c)=>a+c.spent,0);
+ const tableCams=agg?cams.slice(0,15):cams;
  const totBudget=cams.reduce((a,c)=>a+c.budget,0);
  /* group by objective — a lead, a booking, and a purchase never share a blended cost */
  const byObj={};
@@ -971,7 +1013,7 @@ function renderPaid(b,d){
  const objCards=Object.entries(byObj).filter(([o])=>o!=="Awareness").slice(0,2).map(([o,v])=>
   kpi("Cost per "+v.unit.replace(/s$/,""),"$"+(v.spend/Math.max(1,v.results)).toFixed(0),"","",fmt(v.results)+" "+v.unit+" · $"+fmt(v.spend)+" spend · "+o+" campaigns only",null,true)).join("");
  const aw=byObj["Awareness"];
- const rows=cams.map(c=>{
+ const rows=tableCams.map(c=>{
   const spentPct=c.spent/c.budget*100, elPct=c.elapsed/c.flightDays*100;
   const pace=elPct>0?spentPct/elPct:1;
   const paceCls=Math.abs(pace-1)<=0.05?"above":Math.abs(pace-1)<=0.15?"at":"below";
@@ -982,7 +1024,7 @@ function renderPaid(b,d){
   if(c.daysLeft>0&&c.daysLeft<=7)flags.push(`<span class="pill info">Ends in ${c.daysLeft}d</span>`);
   const proj=c.daysLeft>0?c.spent+(c.spent/Math.max(1,c.elapsed))*c.daysLeft:c.spent;
   return `<tr>
-   <td style="font-family:ui-monospace,monospace;font-size:11px">${c.name}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.plat} · ${c.status}</div></td>
+   <td style="font-family:ui-monospace,monospace;font-size:11px">${c.name}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.brand?c.brand+" · ":""}${c.plat} · ${c.status}</div></td>
    <td>${c.obj}</td>
    <td>${c.flightDays}d · ${c.daysLeft>0?c.daysLeft+"d left":"done"}</td>
    <td>$${fmt(c.budget)}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.lifetime?"lifetime":"daily-equivalent"}</div></td>
@@ -1000,7 +1042,7 @@ function renderPaid(b,d){
    ${kpi("Needs attention",cams.filter(c=>{const p=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(p-1)>0.15||c.freq>=3.5}).length,"","","Pacing off ±15% or creative fatigued",null,true)}
   </div>
   <div class="caption" style="margin-top:6px">Costs are reported per objective only — a lead, a booking, and a purchase never share a "blended" cost, and awareness spend is shown separately with reach.</div>
-  <h2>Campaigns <span class="note">results speak each campaign's language — leads, bookings, calls — never generic "conversions"</span></h2>
+  <h2>Campaigns <span class="note">${agg?"portfolio: every company's campaigns aggregated — top 15 of "+allCount+" by spend shown · ":""}results speak each campaign's language — flights are absolute; spend shown is flight-to-date</span></h2>
   <div class="card" style="overflow-x:auto"><table><thead><tr><th>Campaign</th><th>Goal</th><th>Flight</th><th>Budget</th><th>Spent</th><th>Results</th><th>Cost / result</th><th>Click rate</th><th>Health</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="caption"><strong>Pacing</strong> = share of budget spent ÷ share of flight elapsed; on pace ±5%, watch 5–15%, act beyond 15% — underspend flagged too. Google can spend 2x a daily budget in one day but never over 30.4x per month — pace monthly. Meta averages daily budgets across the week. <strong>Creative fatigue:</strong> at ~3.5 exposures clicks fade (Meta research: conversion likelihood drops ~45% by the 4th view). <strong>Attribution:</strong> Meta (7-day click/1-day view) and GA4 (data-driven) use different rulers; 10–20% variance is structural — never sum across platforms.</div></div>`;
  destroyCharts();
@@ -1009,6 +1051,7 @@ function renderPaid(b,d){
 /* ---------- Revenue Centers ---------- */
 function renderRev(b,d){
  const el=document.getElementById("view-rev");
+ if(b.seg==="portfolio"){el.innerHTML=`<div class="card"><h2 style="margin-top:0">Portfolio revenue rollup is not yet available</h2><p style="font-size:13px;line-height:1.6">Cross-company revenue aggregation arrives with live Toast and monthly P&L feeds — sample data would mislead here. Select a company to see its revenue centers.</p></div>`;destroyCharts();return;}
  const rv=revData(b);
  const grow=rv.rows.filter(x=>x.status==="grow"),under=rv.rows.filter(x=>x.status==="under");
  const topOpp=[...rv.rows].sort((a,c)=>c.gap-a.gap)[0];
@@ -1046,7 +1089,7 @@ function renderRev(b,d){
   <div class="card"><table><thead><tr><th>Suggested center</th><th>Why this business, why now</th><th>Next step</th></tr></thead><tbody>
   ${sugg.map(([nm,why])=>`<tr><td><strong>${nm}</strong></td><td class="sub2">${why}</td><td class="sub2">Add in Admin view · track demand for one quarter before committing capital</td></tr>`).join("")}
   </tbody></table></div>`:""})()}
-  <h2>Revenue center detail <span class="note">Opportunity Gap = Demand Index − Revenue Index · full formula in spec §8</span></h2>
+  <h2>Revenue center detail <span class="note">Opportunity Gap = Demand Index − Revenue Index · month to date — not affected by the global date range</span></h2>
   <div class="card" style="overflow-x:auto"><table><thead><tr><th>Center</th><th>Today</th><th>Month to date</th><th>vs last year</th><th>Share</th><th>Demand index</th><th>Revenue index</th><th>Gap</th><th>Status &amp; recommended move</th></tr></thead><tbody>
   ${rv.rows.map(x=>`<tr><td><strong>${x.c}</strong></td><td>${rv.toast?"$"+fmt(x.today):"—"}</td><td>$${fmt(x.mtd)}</td><td class="${x.yoy>0?"up":"down"}">${x.yoy>0?"+":""}${x.yoy.toFixed(0)}%</td><td>${x.share.toFixed(0)}%</td><td><strong>${x.D}</strong>${sigBar(x)}</td><td>${x.R}</td><td class="${x.gap>=15?"up":x.gap<=-15?"down":"flat"}">${x.gap>0?"+":""}${x.gap}</td><td>${statusPill(x.status)}<div class="sub2" style="margin-top:4px">${rec(x)}</div></td></tr>`).join("")}
   </tbody></table></div>`;
@@ -1066,12 +1109,13 @@ function renderRev(b,d){
 /* ---------- Demographics ---------- */
 function renderDemo(b,d){
  const el=document.getElementById("view-demo");
+ if(b.seg==="portfolio"){el.innerHTML=`<div class="card"><h2 style="margin-top:0">Portfolio demographics rollup is not yet available</h2><p style="font-size:13px;line-height:1.6">Audience aggregation requires live platform feeds (deduplication across brands matters). Select a company.</p></div>`;destroyCharts();return;}
  const dm=demoData(b);
  const topAge=[...dm.ages].sort((a,c)=>c[1]-a[1])[0];
  const topGeo=dm.geo[0];
  el.innerHTML=`
   <div class="tldr"><b>Who we're reaching:</b> the core audience is <b>${topAge[0]}</b> (${topAge[1].toFixed(0)}% of engaged audience), ${dm.female.toFixed(0)}% female, led by <b>${topGeo[0]}</b> (${topGeo[1].toFixed(0)}%).
-  The email list skews about ${dm.emailOlder.toFixed(0)} points older than social — two different audiences, two content tracks. ${dm.mobile>70?"Mobile dominates: design every page and email for a phone first.":""}</div>
+  The email list skews about ${dm.emailOlder.toFixed(0)} points older than social — two different audiences, two content tracks. Demographics reflect the trailing 90 days — not affected by the global date range. ${dm.mobile>70?"Mobile dominates: design every page and email for a phone first.":""}</div>
   <div class="grid hero">
    ${kpi("Core age group",topAge[0],"","",topAge[1].toFixed(0)+"% of engaged audience",null,true)}
    ${kpi("Gender split",dm.female.toFixed(0)+"% / "+(100-dm.female).toFixed(0)+"%","","","Female / male, engaged audience",null,true)}
@@ -1201,7 +1245,7 @@ function renderAI(b,d){
   `People-on-camera video earned ~${(2.1+d.er.ig).toFixed(1)}x the engagement of product-only posts this period`
  ];
  const lowlights=[
-  d.local.unanswered>2?`${d.local.unanswered} negative reviews sit unanswered (median response ${d.local.respHrs}h)`:d.local.rating<4.4?`Google rating ${d.local.rating.toFixed(1)}★ sits below the 4.4★ practitioner threshold`:`Only ${d.aio.cited} of 12 tracked "best of" questions cite us in AI answers`,
+  d.local.unanswered>2?`≈${d.local.unanswered} negative reviews estimated unanswered (median response ${d.local.respHrs}h)`:d.local.rating<4.4?`Google rating ${d.local.rating.toFixed(1)}★ sits below the 4.4★ practitioner threshold`:`Only ${d.aio.cited} of 12 tracked "best of" questions cite us in AI answers`,
   `Email clicks at ${pct(d.ctr.email)} ${d.ctr.email<B.emailClick?"trail":"barely clear"} the ${pct(B.emailClick)} industry median`,
   `Search appearances outpace clicks — the visibility-to-visit gap widened again`
  ];
@@ -1235,12 +1279,19 @@ function renderAI(b,d){
   <div class="card">${gaps.length?`<table><thead><tr><th>Metric</th><th>Us</th><th>Benchmark</th><th>Gap</th><th>Why it matters</th><th>Move</th></tr></thead><tbody>
    ${gaps.map(g=>`<tr><td><strong>${g.m}</strong></td><td>${pct(g.us)}</td><td>${pct(g.bn)}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${g.src}</div></td><td class="${g.gap>0?"up":"down"}">${g.gap>0?"+":""}${g.gap.toFixed(0)}%</td><td class="sub2">${g.why}</td><td class="sub2">${g.gap>0?"Outperforming — protect it, and reference it in ads":g.fix}</td></tr>`).join("")}
    </tbody></table>`:`<p style="font-size:12.8px;line-height:1.6">Every tracked metric is within ±15% of its industry benchmark this period — no distortions worth acting on. Benchmarks stay out of the way until they make a difference.</p>`}</div>
-  <h2>This month's content plan <span class="note">strategic + timely for July 2026 · generated from season, demand signals, and this brand's past winners</span></h2>
+  <h2>This month's content plan <span class="note">strategic + timely for ${new Date().toLocaleString("en-US",{month:"long",year:"numeric"})} · generated from season and demand signals — links to this brand's actual top/bottom posts once live feeds connect</span></h2>
   <div class="grid threes">
    <div class="card"><h3>Blog</h3><ul>${plan.blog.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
    <div class="card"><h3>YouTube</h3><ul>${plan.yt.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
    <div class="card"><h3>Social</h3><ul>${plan.social.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
   </div>
+  ${b.seg!=="portfolio"?(()=>{const rv=revData(b);const ST=["Awareness","Consideration","Conversion","Retention"];
+  const rows=rv.rows.map(x=>{const rr=rng(hash(b.n+x.c+"cov"));const cells=ST.map((st,si)=>rr()<(x.sig.content/100*0.9+0.15)&&rr()>0.25);return {c:x.c,cells}});
+  const gaps=rows.filter(r=>!r.cells[2]).map(r=>r.c);
+  return `<h2>Content coverage by revenue center <span class="note">what we're NOT talking about — gaps, not just winners · trailing 60 days</span></h2>
+  <div class="card"><table><thead><tr><th>Revenue center</th>${ST.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><strong>${r.c}</strong></td>${r.cells.map(c2=>`<td>${c2?'<span class="pill above">Covered</span>':'<span class="pill below">Missing</span>'}</td>`).join("")}</tr>`).join("")}
+  </tbody></table><div class="caption">${gaps.length?`<strong>Conversion-stage gaps:</strong> ${gaps.join(", ")} — demand exists but nothing moves the visitor to book, call, or buy. Fill these before making more awareness content.`:"Every center has conversion-stage coverage — protect it."}</div></div>`})():""}
   <h2>Recommended actions <span class="note">ranked by impact × confidence × ease · each becomes a tracked decision with owner and due date</span></h2>
   <div class="card"><table><thead><tr><th>Score</th><th>Action</th><th>Why now</th><th>Owner</th><th>Effort</th></tr></thead><tbody>
   ${recs.map(r=>`<tr><td><strong>${r.ice}</strong></td><td><strong>${r.h}</strong></td><td>${r.why}</td><td>${r.owner}</td><td>${r.eff}</td></tr>`).join("")}
@@ -1266,13 +1317,18 @@ document.getElementById("cmpSel").onchange=()=>{state.cmp=document.getElementByI
 document.getElementById("modeSel").onchange=()=>{state.mode=document.getElementById("modeSel").value;render()};
 document.querySelectorAll("nav button").forEach(btn=>btn.onclick=()=>{
  state.view=btn.dataset.view;
- document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===btn));
+ document.querySelectorAll("nav button").forEach(x=>{x.classList.toggle("active",x===btn);x.setAttribute("aria-current",x===btn?"page":"false")});
  render();
 });
+const decState={};function d0k(x){return x.d.slice(0,40)}
 function render(){
  const b=state.brand,d=brandData(b);
+ const ri=document.getElementById("rangeInfo");if(ri)ri.textContent=rangeText();
  ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
- if(state.view==="exec")renderExec(b,d);
+ if(state.view==="exec"){renderExec(b,d);
+  document.querySelectorAll("[data-deca]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].a=sel2.value});
+  document.querySelectorAll("[data-decs]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].s=sel2.value});
+ }
  if(state.view==="channel")renderChannel(b,d,state.channel);
  if(state.view==="comp")renderComp(b,d);
  if(state.view==="paid")renderPaid(b,d);
