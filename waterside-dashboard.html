@@ -81,6 +81,12 @@
   details{background:var(--bg);border:1px solid var(--line);padding:0;margin-top:14px}
   details summary{cursor:pointer;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);font-family:'Nord-Book','Jost',sans-serif}
   details .inner{padding:4px 18px 16px}
+  .logo-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .logo-card{background:#fff;border:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;font-family:'Nord-Book','Jost',sans-serif;transition:border-color .15s}
+  .logo-card:hover{border-color:var(--steel)}
+  .logo-wrap{display:flex;align-items:center;justify-content:center;width:100%}
+  .logo-fallback{align-items:center;justify-content:center;width:64px;background:var(--steel-soft);color:var(--navy);font-family:'Nord-Medium','Jost',serif;font-size:22px}
+  .logo-name{font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--navy);text-align:center}
   .card,details .inner{overflow-x:auto}
   td{overflow-wrap:anywhere}
   th{overflow-wrap:normal}
@@ -171,7 +177,6 @@
 <script>
 /* ---------- Registry ---------- */
 const BRANDS=[
- {n:"Portfolio Rollup",seg:"portfolio"},
  {n:"South Peak Resort",seg:"hospitality"},
  {n:"Longfellow Design Build",seg:"realestate"},
  {n:"Flying Bridge Restaurant",seg:"dining"},
@@ -196,6 +201,37 @@ const BRANDS=[
  {n:"Alpine Adventures (affiliate)",seg:"hospitality"},
  {n:"Vineyard Home (affiliate)",seg:"realestate"}
 ];
+const LOGO_BASE="https://watersidegroup.com/wp-content/uploads/sites/45";
+const LOGOS={
+"Flying Bridge Restaurant":"/2025/01/restaurant-icon@300x.png",
+"Flying Bridge Marina":"/2025/01/marina-icon@300x.png",
+"Flying Bridge Service Center":"/2025/12/service-center@300x.png",
+"Timber Axe Bar & Bowl":"/2025/01/timber-icon@300x.png",
+"Timber Wood Fired":"/2025/12/logo-light-bg_1@300x.png",
+"Longfellow Design Build":"/2025/01/longfellow-icon@300x.png",
+"Tides Hotel":"/2025/01/tides-icon@300x.png",
+"South Peak Resort":"/2025/01/southpeak-icon@300x.png",
+"Basecamp Brewing":"/2025/06/logo-primary@300x-100-1-png.avif",
+"Lighthouse Station":"/2025/01/lhs-icon@300x.png",
+"Three Suns Captiva":"/2025/01/threesuns-icon@300x.png",
+"Snowfish Sushi":"/2025/01/snowfish-icon@300x.png",
+"Little Blue":"/2025/01/littleblue-icon@300x.png",
+"Bluebird Martini Bar":"/2025/01/bluebird-icon@300x.png",
+"The Shop at South Peak":"/2025/01/theshop-icon@300x.png",
+"South Peak Coffee Cart":"/2025/12/website-logo@300x-100.jpg",
+"Mountain Furniture Co.":"/2025/12/mountain-furniture@300x-100.avif",
+"The Mills Marketplace":"/2025/01/mills-icon@300x.png",
+"Harbor Lights":"/2026/03/harborlights-png.avif",
+"Newport Creamery":"/2026/07/Image-from-iOS-1.jpg",
+"Whale's Tale Waterpark (affiliate)":"/2025/01/whalestale-icon@300x.png",
+"Alpine Adventures (affiliate)":"/2025/01/alpineadventures-icon@300x.png",
+"Vineyard Home (affiliate)":"/2025/10/vinyard-home-png.avif"
+};
+function logoImg(name,size){
+ const p=LOGOS[name];
+ const initials=name.replace(/\(.*\)/,"").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("");
+ return `<span class="logo-wrap" style="height:${size}px">${p?`<img src="${LOGO_BASE}${p}" alt="${name} logo" loading="lazy" style="max-height:${size}px;max-width:100%;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:""}<span class="logo-fallback" style="display:${p?"none":"flex"};height:${size}px">${initials}</span></span>`;
+}
 const SEGLABEL={portfolio:"All segments",dining:"Dining & Nightlife",hospitality:"Hospitality & Resort",realestate:"Real Estate & Home",marine:"Marine",retail:"Retail"};
 const BENCH={
  dining:{igER:0.40,fbER:0.03,ttER:2.04,emailClick:1.06,webConv:2.35,gadsCTR:7.58,gadsConv:7.09,metaCTR:1.71,result:"covers"},
@@ -317,8 +353,8 @@ function brandDataRaw(b){
  /* outcomes and spend carry their OWN comparisons — never proxied by sessions */
  const d={
   followers:{fb:Math.round(3200*scale*sm(.5,1.5)),ig:Math.round(4100*scale*sm(.5,1.6)),yt:Math.round(400*scale*sm(.3,1.4)),tt:Math.round(1500*scale*sm(.3,1.8))},
-  dPrior:{fb:dp(),ig:dp(),yt:dp(),tt:dp(),web:dp(),email:dp(),paid:dp(),gsc:dp(),local:dp(),outcome:dp()},
-  dYoY:{fb:dy(),ig:dy(),yt:dy(),tt:dy(),web:dy(),email:dy(),paid:dy(),gsc:dy(),local:dy(),outcome:dy()},
+  dPrior:{fb:dp(),ig:dp(),yt:dp(),tt:dp(),web:dp(),email:dp(),paid:dp(),gsc:dp(),local:dp(),outcome:dp(),leads:dp()},
+  dYoY:{fb:dy(),ig:dy(),yt:dy(),tt:dy(),web:dy(),email:dy(),paid:dy(),gsc:dy(),local:dy(),outcome:dy(),leads:dy()},
   posts:{fb:Math.round(12*f*vm()),ig:Math.round(15*f*vm()),yt:Math.round(3*f*vm()),tt:Math.round(8*f*vm()),blog:Math.round(3*f*vm()),email:Math.round(4*f*vm())},
   stories:Math.round(28*f*vm()),
   er:{fb:B.fbER*mult(.5,2.1),ig:B.igER*mult(.5,2.2),yt:0.21*mult(.5,2),tt:B.ttER*mult(.4,2.3)},
@@ -335,6 +371,12 @@ function brandDataRaw(b){
  };
  function d0(total,n){return total/n}
  d.web.keyEvents=Math.round(d.web.sessions*d.conv.web/100);
+ /* HubSpot lead records: total + source attribution */
+ {const lt=Math.max(1,Math.round(34*f*scale*mult(.5,1.5)));
+  const p1=mult(.30,.44),p2=mult(.18,.32),p3=mult(.13,.24);
+  d.leads={total:lt,
+   sources:[["Website email form",Math.round(lt*p1)],["Phone calls",Math.round(lt*p2)],["Paid social campaigns",Math.round(lt*p3)],["Social links",Math.max(0,lt-Math.round(lt*p1)-Math.round(lt*p2)-Math.round(lt*p3))]]};
+  d.trend.leads=series(rng(hash(b.n+"leads"+P.days)),lt/P.n,.25,P.n,.02);}
  d.local.unanswered=Math.max(0,Math.round(d.local.vel30*(1-d.local.respRate/100)*0.5));
  d.web.bookviews=Math.round(d.web.sessions*0.07);
  d.feeds={GA4:"sample",GSC:"sample",Meta:"sample",GBP:(hash(b.n)%10)>1?"sample":"missing",Toast:TOAST_BRANDS.test(b.n)?"sample":"unavailable"};
@@ -515,11 +557,31 @@ function barChart(id,labels,datasets,stacked){
 const ALGO_WEATHER=`<strong>Algorithm weather:</strong> no Google update currently rolling out. 2026 confirmed so far: <a href="https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history" style="color:var(--steel)">March core (Mar 27–Apr 8), March spam, May core (May 21–Jun 2)</a>. Dips inside those windows were industry-wide — judge search changes outside them.`;
 function dataStatus(d){
  const LBL={connected:["above","LIVE"],stale:["at","STALE"],sample:["sample","SAMPLE"],missing:["at","MISSING"],unavailable:["below","UNAVAILABLE"]};
- const rows=[["Google Analytics 4",d.feeds.GA4],["Google Search Console",d.feeds.GSC],["Meta Business Suite",d.feeds.Meta],["Google Business Profile",d.feeds.GBP],["Toast POS",d.feeds.Toast],["Monthly P&L import","missing"],["Email platform","sample"],["Reviews (Google/Yelp/TripAdvisor)","sample"]];
+ const rows=[["Google Analytics 4",d.feeds.GA4],["Google Search Console",d.feeds.GSC],["Meta Business Suite",d.feeds.Meta],["Google Business Profile",d.feeds.GBP],["Toast POS",d.feeds.Toast],["Monthly P&L import","missing"],["HubSpot (leads & sources)","sample"],["Email platform","sample"],["Reviews (Google/Yelp/TripAdvisor)","sample"]];
  const live=rows.filter(r=>r[1]==="connected").length;
  return `<details><summary>Data status by source — ${live} of ${rows.length} live · completeness ${d.completeness}%</summary><div class="inner"><table><thead><tr><th>Source</th><th>Status</th><th>Last successful sync</th></tr></thead><tbody>
  ${rows.map(r=>{const L=LBL[r[1]]||LBL.sample;return `<tr><td>${r[0]}</td><td><span class="pill ${L[0]}">${L[1]}</span></td><td>${r[1]==="connected"?"—":"never"}</td></tr>`}).join("")}
  </tbody></table><div class="caption"><strong>Status model:</strong> LIVE = connected with a recent sync · STALE = connected, sync outside SLA · SAMPLE = illustrative values · MISSING = expected but not connected · UNAVAILABLE = integration not supported for this brand. <strong>Only LIVE counts toward completeness</strong> — sample data never produces a green status, and nothing on this screen should drive a decision until its source reads LIVE.</div></div></details>`;
+}
+
+/* ---------- Landing: choose a business / top performers ---------- */
+function renderLanding(el){
+ const scored=BRANDS.map(x=>{const d=brandDataRaw(x);const B=BENCH[x.seg];
+  return {b:x,d,score:getD(d,"outcome")+ (d.conv.web/B.webConv)*8 + (d.er.ig/B.igER)*4};}).sort((a,c)=>c.score-a.score);
+ const top=scored.slice(0,6);
+ const flags=scored.map(x=>{let sev=0;const why=[];
+   if(x.d.local.rating<4.3||x.d.local.unanswered>2){sev+=2;why.push("reviews need attention")}
+   if(getD(x.d,"outcome")<0){sev+=2;why.push("outcomes down "+Math.abs(getD(x.d,"outcome")).toFixed(0)+"%")}
+   if(getD(x.d,"gsc")<0){sev+=1;why.push("search demand soft")}
+   return {...x,sev,why}}).filter(x=>x.sev>=2).sort((a,c)=>c.sev-a.sev).slice(0,3);
+ el.innerHTML=`
+  <h2 style="margin-top:0">Best performing businesses <span class="note">${cmpLabel().replace("vs ","ranked vs ")} · outcomes growth + conversion + engagement vs each segment's benchmarks</span></h2>
+  <div class="logo-grid">
+  ${top.map(x=>`<button class="logo-card" data-open="${x.b.n}" aria-label="Open ${x.b.n}">${logoImg(x.b.n,64)}<span class="logo-name">${x.b.n}</span><span class="delta ${getD(x.d,"outcome")>=0?"up":"down"}" style="font-size:11.5px">${getD(x.d,"outcome")>=0?"+":""}${getD(x.d,"outcome").toFixed(0)}% ${BENCH[x.b.seg].result}</span></button>`).join("")}
+  </div>
+  ${flags.length?`<h2>Needs attention</h2><div class="card">${flags.map(x=>`<div class="insight alert" style="margin-bottom:8px"><span class="tag">${x.b.n}</span><p>${x.why.join(" · ")} — <a href="#" data-open="${x.b.n}" style="color:var(--steel)">open scorecard</a></p></div>`).join("")}</div>`:""}
+  <p class="caption">Choose a business above or from the dropdown to see its full scorecard, channels, competitors, campaigns, revenue centers, demographics, and advice.</p>`;
+ el.querySelectorAll("[data-open]").forEach(x=>x.onclick=(e)=>{e.preventDefault();const nm=x.dataset.open;sel.value=nm;state.brand=BRANDS.find(y=>y.n===nm);render()});
 }
 
 /* ---------- TL;DR ---------- */
@@ -627,6 +689,11 @@ function renderExec(b,d){
    ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"outcome")),pill(d.conv.web,B.webConv),B.result.charAt(0).toUpperCase()+B.result.slice(1)+". Calls tracked separately: "+fmt(d.local.calls),spark(d.trend.actions))}
   </div>
   <div class="caption" style="margin-top:6px">The funnel keeps each stage in its own unit — nothing here is added across unlike measures. Where demand leaks is visible stage to stage.</div>
+  <h2>Leads — HubSpot <span class="note">totals for the selected period · source attribution from HubSpot contact records</span></h2>
+  <div class="grid hero">
+   ${kpi("Total leads",fmt(d.leads.total),delta(getD(d,"leads")),"","All sources, deduplicated by contact",spark(d.trend.leads))}
+   ${d.leads.sources.map(x=>kpi(x[0],fmt(x[1]),"","",pct(x[1]/d.leads.total*100,0)+" of leads this period",null,true)).join("")}
+  </div>
   <div class="grid two" style="margin-top:12px">
     <div class="card"><h2 style="margin-top:0;font-size:15px">${getD(d,"gsc")>getD(d,"web")?"More people see us than click — that's the new normal, not a failure":"Visits are keeping pace with visibility"} <span class="note">${P.days===1?"by hour":P.days===7?"by day":P.days===365?"by month":"by week"}</span></h2><div class="chartbox"><canvas id="execTrend"></canvas></div>
     <div class="caption">Google answers many questions on its own page now. Being seen still builds the brand even when clicks lag. AI-assistant visits are few but high-intent — see Channels → Search &amp; AI.</div></div>
@@ -1303,15 +1370,16 @@ function renderAI(b,d){
 }
 
 /* ---------- App state & wiring ---------- */
-const state={brand:BRANDS[0],view:"exec",channel:"Instagram",cmp:"yoy",mode:"owner"};
+const state={brand:null,view:"exec",channel:"Instagram",cmp:"yoy",mode:"owner"};
 const sel=document.getElementById("companySel");
 const groups={};
+sel.add(new Option("Choose a Business",""));
 BRANDS.forEach(b=>{
- if(b.n==="Portfolio Rollup"){sel.add(new Option(b.n,b.n));return}
  if(!groups[b.seg]){groups[b.seg]=document.createElement("optgroup");groups[b.seg].label=SEGLABEL[b.seg];sel.appendChild(groups[b.seg])}
  groups[b.seg].appendChild(new Option(b.n,b.n));
 });
-sel.onchange=()=>{state.brand=BRANDS.find(x=>x.n===sel.value);render()};
+sel.setAttribute("aria-label","Choose a Business");
+sel.onchange=()=>{state.brand=sel.value?BRANDS.find(x=>x.n===sel.value):null;render()};
 document.getElementById("rangeSel").onchange=render;
 document.getElementById("cmpSel").onchange=()=>{state.cmp=document.getElementById("cmpSel").value;render()};
 document.getElementById("modeSel").onchange=()=>{state.mode=document.getElementById("modeSel").value;render()};
@@ -1322,8 +1390,12 @@ document.querySelectorAll("nav button").forEach(btn=>btn.onclick=()=>{
 });
 const decState={};function d0k(x){return x.d.slice(0,40)}
 function render(){
- const b=state.brand,d=brandData(b);
  const ri=document.getElementById("rangeInfo");if(ri)ri.textContent=rangeText();
+ if(!state.brand){
+  ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+  destroyCharts();renderLanding(document.getElementById("view-"+state.view));return;
+ }
+ const b=state.brand,d=brandData(b);
  ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
  if(state.view==="exec"){renderExec(b,d);
   document.querySelectorAll("[data-deca]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].a=sel2.value});
