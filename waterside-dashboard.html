@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waterside Group — Marketing Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#13416C; --steel:#6E8CAD; --steel-soft:#eef2f7;
+    --ink:#4C4D47; --muted:#666666; --line:#e2e6ea; --bg:#ffffff; --section:#f7f9fb;
+    --good:#2e7d54; --warn:#a86f0e; --bad:#b3402f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nord-Book','Jost',sans-serif;background:var(--section);color:var(--ink);font-size:14px;line-height:1.45}
+  h1,h2,h3{font-family:'Nord-Medium','Jost',serif;font-weight:500;color:var(--navy);letter-spacing:-0.2px}
+  button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:18px 30px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  header h1{font-size:22px}
+  header .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .protobanner{background:#fdf6e7;border-bottom:1px solid #f0dcae;color:#7a5c10;font-size:11.5px;padding:6px 30px;letter-spacing:.3px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select{background:#fff;color:var(--navy);border:1px solid var(--steel);border-radius:0;padding:9px 12px;font-size:11.5px;font-family:'Nord-Book','Jost',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer}
+  #companySel{min-width:230px;letter-spacing:.5px;text-transform:none;font-size:13px}
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 30px;display:flex;gap:26px;overflow-x:auto}
+  nav button{background:none;border:none;padding:14px 0;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:'Nord-Book','Jost',sans-serif}
+  nav button.active{color:var(--navy);border-bottom-color:var(--navy)}
+  main{padding:24px 30px;max-width:1380px;margin:0 auto}
+  .grid{display:grid;gap:14px}
+  .hero{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .kpis{grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+  .card{background:var(--bg);border:1px solid var(--line);padding:18px;overflow-x:auto}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:700}
+  .kpi .val{font-size:30px;font-family:'Nord-Medium','Jost',serif;color:var(--navy);margin:8px 0 3px}
+  .kpi.small .val{font-size:24px}
+  .kpi .delta{font-size:12px;font-weight:600}
+  .kpi .sub2{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .kpi svg{display:block;margin-top:10px;width:100%;height:34px}
+  .up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--warn)}
+  .pill{font-size:10px;font-weight:700;padding:3px 9px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+  .pill.above{background:#e6f2ec;color:var(--good)} .pill.at{background:#f7edd8;color:var(--warn)} .pill.below{background:#f7e4e0;color:var(--bad)}
+  .pill.info{background:var(--steel-soft);color:var(--navy)}
+  .pill.sample{background:#f0f0ee;color:#8a8a86;font-weight:600}
+  h2{font-size:17px;margin:26px 0 12px}
+  h2 .note{font-family:'Nord-Book','Jost',sans-serif;font-size:12px;color:var(--muted);letter-spacing:0}
+  .two{grid-template-columns:1.6fr 1fr}
+  .chartbox{height:265px;position:relative}
+  table{width:100%;border-collapse:collapse;font-size:12.8px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:9px;border-bottom:2px solid var(--line);white-space:nowrap;font-weight:700}
+  td{padding:10px 9px;border-bottom:1px solid #eef1f4;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr.hl td{background:var(--steel-soft);font-weight:600;color:var(--navy)}
+  .chtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .chtabs button{border:1px solid var(--steel);background:#fff;padding:8px 16px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);cursor:pointer;font-family:'Nord-Book','Jost',sans-serif}
+  .chtabs button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .tldr{background:var(--navy);color:#fff;padding:20px 22px;margin-bottom:14px;line-height:1.6;font-size:14px}
+  .tldr b{color:#a9c4dd;font-weight:600}
+  .insight{border-left:3px solid var(--steel);padding:13px 16px;margin-bottom:11px;background:#fff;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .insight .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--navy)}
+  .insight.alert{border-left-color:var(--bad)} .insight.alert .tag{color:var(--bad)}
+  .insight.idea{border-left-color:var(--warn)} .insight.idea .tag{color:var(--warn)}
+  .insight h3{font-size:13.5px;margin:5px 0 5px}
+  .insight p{font-size:12.8px;color:var(--ink);line-height:1.55}
+  .insight .ev{font-size:11px;color:var(--muted);margin-top:7px;font-style:italic}
+  .news{border-left:3px solid var(--steel);padding:13px 16px;margin-bottom:10px;background:#fff;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .news .date{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:2px}
+  .news h3{font-size:13.5px;margin:4px 0 4px}
+  .news p{font-size:12.6px;line-height:1.5}
+  .news .means{font-size:12.4px;margin-top:7px;color:var(--navy);font-weight:600}
+  .news a{color:var(--steel)}
+  .threes{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .threes .card h3{font-size:12px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;font-family:'Nord-Book','Jost',sans-serif;font-weight:700}
+  .threes ul{list-style:none}
+  .threes li{font-size:12.8px;line-height:1.5;padding:7px 0;border-bottom:1px solid #eef1f4}
+  .threes li:last-child{border-bottom:none}
+  .foot{margin:26px 0 8px;font-size:11.5px;color:var(--muted);line-height:1.7}
+  .caption{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.55}
+  .algoweather{background:#fff;border:1px solid var(--line);border-left:3px solid var(--steel);padding:9px 14px;font-size:12px;color:var(--ink);margin-bottom:14px}
+  details{background:var(--bg);border:1px solid var(--line);padding:0;margin-top:14px}
+  details summary{cursor:pointer;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);font-family:'Nord-Book','Jost',sans-serif}
+  details .inner{padding:4px 18px 16px}
+  @media(max-width:900px){.two{grid-template-columns:1fr}}
+  @media(max-width:640px){
+    header{padding:12px 16px}
+    header h1{font-size:18px}
+    .protobanner{padding:6px 16px}
+    nav{padding:0 16px;gap:16px}
+    nav button{letter-spacing:1.5px;font-size:11px;padding:12px 0}
+    main{padding:14px 16px}
+    .controls{width:100%}
+    .controls select{flex:1 1 45%;min-width:0}
+    #companySel{width:100%;flex-basis:100%}
+    .hero{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+    .kpi .val{font-size:24px}
+    .tldr{font-size:13px;padding:14px 16px}
+    h2{font-size:15px}
+    .chartbox{height:220px}
+    .threes{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Marketing Performance</h1>
+    <div class="sub">WATERSIDE GROUP · per-source sync status in Data Status panel</div>
+  </div>
+  <div class="controls">
+    <select id="companySel" aria-label="Company"></select>
+    <select id="rangeSel" aria-label="Date range">
+      <option value="1">Yesterday</option>
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Year to date</option>
+    </select>
+    <select id="cmpSel" aria-label="Comparison">
+      <option value="yoy">vs last year</option>
+      <option value="prior">vs prior period</option>
+    </select>
+    <select id="modeSel" aria-label="View mode">
+      <option value="owner">Owner view</option>
+      <option value="admin">Admin view</option>
+    </select>
+  </div>
+</header>
+<nav>
+  <button class="active" data-view="exec">Scorecard</button>
+  <button data-view="channel">Channels</button>
+  <button data-view="comp">Competitors</button>
+  <button data-view="paid">Paid Campaigns</button>
+  <button data-view="rev">Revenue Centers</button>
+  <button data-view="demo">Demographics</button>
+  <button data-view="ai">Insights &amp; Advice</button>
+</nav>
+<main>
+  <div id="view-exec"></div>
+  <div id="view-channel" style="display:none"></div>
+  <div id="view-comp" style="display:none"></div>
+  <div id="view-paid" style="display:none"></div>
+  <div id="view-rev" style="display:none"></div>
+  <div id="view-demo" style="display:none"></div>
+  <div id="view-ai" style="display:none"></div>
+  <div class="foot">
+    <strong>How to read this portal:</strong> comparisons default to the same period last year, weekday-aligned; the selector switches to prior-period and every change names its baseline in words. The funnel never adds unlike measures — visibility, visits, intent, and outcomes are separate stages. Email opens are directional only. Meta figures are views-based (impressions retired Nov 2025). Ad results are never summed across platforms or objectives.
+  </div>
+</main>
+
+<script>
+/* ---------- Registry ---------- */
+const BRANDS=[
+ {n:"Portfolio Rollup",seg:"portfolio"},
+ {n:"South Peak Resort",seg:"hospitality"},
+ {n:"Longfellow Design Build",seg:"realestate"},
+ {n:"Flying Bridge Restaurant",seg:"dining"},
+ {n:"Flying Bridge Marina",seg:"marine"},
+ {n:"Flying Bridge Service Center",seg:"marine"},
+ {n:"Timber Wood Fired",seg:"dining"},
+ {n:"Timber Axe Bar & Bowl",seg:"dining"},
+ {n:"Basecamp Brewing",seg:"dining"},
+ {n:"Snowfish Sushi",seg:"dining"},
+ {n:"Bluebird Martini Bar",seg:"dining"},
+ {n:"Little Blue",seg:"dining"},
+ {n:"South Peak Coffee Cart",seg:"dining"},
+ {n:"Newport Creamery",seg:"dining"},
+ {n:"Tides Hotel",seg:"hospitality"},
+ {n:"Three Suns Captiva",seg:"hospitality"},
+ {n:"Harbor Lights",seg:"hospitality"},
+ {n:"The Mills Marketplace",seg:"hospitality"},
+ {n:"Lighthouse Station",seg:"realestate"},
+ {n:"Mountain Furniture Co.",seg:"realestate"},
+ {n:"The Shop at South Peak",seg:"retail"},
+ {n:"Whale's Tale Waterpark (affiliate)",seg:"hospitality"},
+ {n:"Alpine Adventures (affiliate)",seg:"hospitality"},
+ {n:"Vineyard Home (affiliate)",seg:"realestate"}
+];
+const SEGLABEL={portfolio:"All segments",dining:"Dining & Nightlife",hospitality:"Hospitality & Resort",realestate:"Real Estate & Home",marine:"Marine",retail:"Retail"};
+const BENCH={
+ dining:{igER:0.40,fbER:0.03,ttER:2.04,emailClick:1.06,webConv:2.35,gadsCTR:7.58,gadsConv:7.09,metaCTR:1.71,result:"covers"},
+ hospitality:{igER:0.34,fbER:0.06,ttER:2.73,emailClick:2.09,webConv:2.8,gadsCTR:8.73,gadsConv:5.75,metaCTR:2.76,result:"bookings"},
+ realestate:{igER:0.30,fbER:0.05,ttER:3.10,emailClick:2.50,webConv:2.8,gadsCTR:8.43,gadsConv:3.28,metaCTR:1.68,result:"leads"},
+ marine:{igER:0.35,fbER:0.05,ttER:2.00,emailClick:2.09,webConv:2.35,gadsCTR:6.05,gadsConv:5.0,metaCTR:1.71,result:"leads"},
+ retail:{igER:0.33,fbER:0.04,ttER:2.00,emailClick:2.09,webConv:2.35,gadsCTR:6.5,gadsConv:4.0,metaCTR:1.57,result:"purchases"},
+ portfolio:{igER:0.35,fbER:0.05,ttER:2.30,emailClick:1.80,webConv:2.6,gadsCTR:7.8,gadsConv:5.5,metaCTR:2.0,result:"actions"}
+};
+const COMPS={
+"Flying Bridge Restaurant":["Pier 37 Boathouse","The Quarterdeck","Landfall Restaurant","Falmouth Raw Bar","Paul's Pizza & Seafood"],
+"Timber Wood Fired":["Alpine Pizza (Lincoln)","GH Pizza","Enzo's Pizzeria","Chapoquoit Grill (Falmouth)","Pub 32"],
+"Timber Axe Bar & Bowl":["The Lanes Bowl & Bistro","Ryan Family Amusements","Ten Pin Eatery & Arcade","The Alley Bowling & BBQ"],
+"Basecamp Brewing":["Woodstock Inn Brewery","Twin Barns Brewing","Rek'-lis Brewing","Schilling Beer Co.","Moat Mountain Smokehouse"],
+"Snowfish Sushi":["Grey Whale Sushi & Grill","Taste The Thai & Sushi House","Enso Japanese Steak House"],
+"Bluebird Martini Bar":["The Grateful Skier","Gordi's Fish & Steak","Seven Birches Winery","Loon Mtn bars (Babe's/Black Diamond)","DeaconStreet Martini Bar"],
+"Newport Creamery":["Gregg's","Chelo's","Friendly's","Frosty Freeze","Sundaes"],
+"South Peak Resort":["RiverWalk Resort at Loon","Owl's Nest Resort","Bretton Woods townhomes","Sunday River Merrill Hill","Spruce Peak at Stowe"],
+"Tides Hotel":["Inn on the Sound","Shore Haven Inn (Lark)","Green Harbor Lodging","CapeWind Waterfront Resort"],
+"Three Suns Captiva":["Sea Oats Luxury Estate","Royal Shell Vacations","SanCap Island Rentals","Kingfisher Vacations","'Tween Waters Island Resort"],
+"Harbor Lights":["Warwick Country Club","Quidnessett Country Club","Chelo's Waterfront (Warwick)","Safe Harbor Greenwich Bay","Safe Harbor Cowesett"],
+"The Mills Marketplace":["Settlers Green","North Conway Village","Tanger Outlets Tilton","Downtown Littleton","Lincoln Main St retail"],
+"Longfellow Design Build":["Cataldo Custom Builders","McPhee Associates","Cape Associates","S+H Construction","Feinmann Inc."],
+"Lighthouse Station":["Southport on Cape Cod","Everleigh Cape Cod","The Boatyard Condos","Dillingham Place","Cottages at LeBaron Hills"],
+"Mountain Furniture Co.":["Green Mountain Furniture","Allen Wayside Furniture","The Naked Bohemian","Yankee Furniture Barn","Jerry's Furniture"],
+"Flying Bridge Marina":["MacDougalls'","East Marine / Oyster Harbors","Falmouth Marine & Yachting","Cataumet Boats","Green Pond / The Haven"],
+"Flying Bridge Service Center":["Fairhaven Shipyard & Marina","Earl's Marina","South Coast Mobile Marine","Preservati Marine","Fairhaven Marine Service"]
+};
+const REVC_OVERRIDE={
+"Flying Bridge Marina":["Boat Sales","Boat Club","Service","Slips","Storage"],
+"Flying Bridge Service Center":["Repowers","Maintenance Plans","Repairs","Parts & Rigging","Winterization & Storage"],
+"Timber Axe Bar & Bowl":["Axe Throwing","Candlepin Bowling","Bar","Kitchen & Pizza","Private Events"],
+"Basecamp Brewing":["Dining Room","Bar & Taproom","Beer To-Go","Private Events","Merchandise"],
+"Newport Creamery":["Dine-In","Ice Cream & Awful Awful","Takeout & Drive-Thru","Catering","Retail Pints"],
+"South Peak Resort":["Home & Lot Sales","Vacation Rentals","The Shop","Events","Owner Services"],
+"Tides Hotel":["Rooms","Little Blue Café","Beach & Amenities","Events"],
+"Harbor Lights":["Marina","Golf","Weddings & Events","Restaurant & Bar","Pool & Drift Bar"],
+"Longfellow Design Build":["Custom Homes","Remodeling","Kitchen & Bath","Architecture & Design","NH Division"],
+"The Mills Marketplace":["Tenant Leases","Sponsorships & Events","Common-Area Retail"],
+"Mountain Furniture Co.":["Furniture Sales","Design Services","Fireplaces","Delivery & Install"]
+};
+const REVC_DEFAULT={dining:["Dining Room","Bar","Takeout & Online","Private Events","Merchandise"],hospitality:["Lodging","Food & Beverage","Events","Retail"],realestate:["Sales","Design Services","Other"],marine:["Service","Sales","Storage"],retail:["In-Store","Online","Custom Orders"],portfolio:["Dining & Nightlife","Hospitality & Resort","Real Estate & Home","Marine","Retail"]};
+const TOAST_BRANDS=/Flying Bridge Restaurant|Timber|Basecamp|Snowfish|Bluebird|Little Blue|Coffee|Newport Creamery/;
+const MENTION_COLORS=["#13416C","#6E8CAD","#a86f0e","#2e7d54","#88a6c4","#b3402f","#4C4D47","#7a5c96","#3e8f8a","#c07a3a","#5b6d7e","#94502f","#2f5d8a","#8a8a52","#644b41"];
+function regionOf(b){if(/Three Suns/.test(b.n))return"fl";if(/Harbor Lights|Newport Creamery/.test(b.n))return"ri";if(/South Peak|Timber Wood|Basecamp|Snowfish|Bluebird|Mills|Mountain|Coffee|Shop|Whale|Alpine/.test(b.n))return"nh";return"cape"}
+function brandSlug(b){return b.n.toLowerCase().replace(/\(.*\)/,"").trim().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"")}
+const REGION_SUGG={
+ reddit:{nh:"reddit.com/r/newhampshire · r/WhiteMountains",cape:"reddit.com/r/CapeCod · r/boston",ri:"reddit.com/r/RhodeIsland · r/providence",fl:"reddit.com/r/fortmyers · r/florida"},
+ fbgroup:{nh:"'Lincoln-Woodstock NH Community' · 'NH Ski & Ride'",cape:"'Everything Falmouth MA' · 'Cape Cod Locals'",ri:"'What's Up Newp Community' · 'Warwick RI Happenings'",fl:"'Captiva Sanibel Islands Community'"},
+ mag:{nh:"nhmagazine.com · visitwhitemountains.com",cape:"capecodlife.com · capecodtimes.com · bostonmagazine.com",ri:"rimonthly.com · whatsupnewp.com",fl:"timesoftheislands.com"}
+};
+function mentionSourceDefs(b){
+ const rg=regionOf(b),s=brandSlug(b);
+ return [
+  {n:"Google Reviews",on:true,sug:"auto-linked from the Google Business Profile connection"},
+  {n:"Facebook Reviews",on:true,sug:"facebook.com/"+s+"/reviews"},
+  {n:"Facebook Groups",on:false,sug:REGION_SUGG.fbgroup[rg]},
+  {n:"Reddit",on:true,sug:REGION_SUGG.reddit[rg]},
+  {n:"Nextdoor",on:false,sug:"nextdoor.com business page for "+b.n},
+  {n:"Houzz",on:b.seg==="realestate",sug:"houzz.com/pro/"+s},
+  {n:"Local Magazines & Press",on:true,sug:REGION_SUGG.mag[rg]},
+  {n:"Yelp",on:true,sug:"yelp.com/biz/"+s},
+  {n:"TripAdvisor",on:b.seg!=="realestate",sug:"tripadvisor.com listing for "+b.n},
+  {n:"Google Maps",on:true,sug:"covered by the Google Business Profile connection"},
+  {n:"LinkedIn",on:b.seg==="realestate",sug:"linkedin.com/company/"+s},
+  {n:"BBB",on:false,sug:"bbb.org profile for "+b.n},
+  {n:"Pinterest",on:b.seg==="realestate"||b.seg==="retail",sug:"pinterest.com — brand pins + tagged saves"},
+  {n:"Glassdoor",on:false,sug:"glassdoor.com employer reviews — hiring reputation"},
+  {n:"Indeed",on:false,sug:"indeed.com employer reviews — enable during hiring pushes"}
+ ];
+}
+const mentionSrcState={};
+function mentionSources(b){if(!mentionSrcState[b.n])mentionSrcState[b.n]=mentionSourceDefs(b).map(x=>({...x,url:""}));return mentionSrcState[b.n]}
+const CONTENT={
+ dining:[["Reel","Chef plating the wood-fired special — staff on camera"],["Carousel","Behind the bar: 5 cocktails, 5 stories"],["Story set","Friday night live music, 8 frames"],["Reel","POV: first bite reaction at the raw bar"],["Post","New seasonal menu announcement"]],
+ hospitality:[["Reel","Drone flyover: sunrise over the property"],["Carousel","10 photos guests took this week"],["Story set","A day at the resort, 9 frames"],["Reel","Room-to-view walkthrough in 22 seconds"],["Post","Event weekend recap album"]],
+ realestate:[["Reel","Site walk: framing to finished in 60s"],["Carousel","Before/after: kitchen transformation"],["Post","Just completed: client home tour"],["Reel","Designer explains one smart detail"],["Story set","Selection day with a client, 7 frames"]],
+ marine:[["Reel","Repower time-lapse: old outboard to new"],["Carousel","5 boats ready for the season"],["Post","Customer launch day photo"],["Reel","Dockside walkthrough of a new listing"],["Story set","Service bay Saturday, 6 frames"]],
+ retail:[["Carousel","New arrivals: mountain apparel drop"],["Reel","Fit check: 4 looks for the slopes"],["Post","Weekend sale announcement"],["Reel","Unboxing the new Helly Hansen line"],["Story set","Staff picks, 5 frames"]],
+ portfolio:[["Reel","Drone flyover: sunrise over South Peak"],["Carousel","Before/after: Longfellow kitchen build"],["Reel","Chef plating at Flying Bridge — staff on camera"],["Story set","A day at Harbor Lights, 9 frames"],["Carousel","10 guest photos across the portfolio"]]
+};
+
+/* ---------- PRNG ---------- */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let s=seed;return()=>{s=Math.imul(s^(s>>>15),s|1);s^=s+Math.imul(s^(s>>>7),s|61);return((s^(s>>>14))>>>0)/4294967296}}
+function series(r,base,vol,n,trend=0){const out=[];let v=base;for(let i=0;i<n;i++){v=Math.max(0,v*(1+trend+(r()-0.5)*vol));out.push(v)}return out}
+
+/* ---------- Period handling: range selector REALLY changes data ---------- */
+function period(){
+ const days=+document.getElementById("rangeSel").value;
+ if(days===1)return{days,n:8,labels:["6a","8a","10a","12p","2p","4p","6p","8p"]};
+ if(days===7)return{days,n:7,labels:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]};
+ if(days===30)return{days,n:4,labels:["Wk 1","Wk 2","Wk 3","Wk 4"]};
+ if(days===90)return{days,n:12,labels:Array.from({length:12},(_,i)=>"W"+(i+1))};
+ return{days,n:7,labels:["Jan","Feb","Mar","Apr","May","Jun","Jul"]};
+}
+
+/* ---------- Brand data: seeded per brand AND per range; volumes scale with days ---------- */
+function brandDataRaw(b){
+ const P=period();const f=P.days/30;
+ const rB=rng(hash(b.n));            /* stocks — stable regardless of range */
+ const r=rng(hash(b.n+"|"+P.days));  /* flows & rates — vary by range */
+ const B=BENCH[b.seg];
+ const scale=0.4+rB()*2.2;
+ const sm=(lo,hi)=>lo+rB()*(hi-lo);
+ const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const vm=()=>mult(.8,1.25);         /* volume variation kept narrow so 30d < 90d < YTD always holds */
+ const dp=()=>mult(-4,8), dy=()=>mult(-8,22);
+ const d={
+  followers:{fb:Math.round(3200*scale*sm(.5,1.5)),ig:Math.round(4100*scale*sm(.5,1.6)),yt:Math.round(400*scale*sm(.3,1.4)),tt:Math.round(1500*scale*sm(.3,1.8))},
+  dPrior:{fb:dp(),ig:dp(),yt:dp(),tt:dp(),web:dp(),email:dp(),paid:dp(),gsc:dp(),local:dp()},
+  dYoY:{fb:dy(),ig:dy(),yt:dy(),tt:dy(),web:dy(),email:dy(),paid:dy(),gsc:dy(),local:dy()},
+  posts:{fb:Math.round(12*f*vm()),ig:Math.round(15*f*vm()),yt:Math.round(3*f*vm()),tt:Math.round(8*f*vm()),blog:Math.round(3*f*vm()),email:Math.round(4*f*vm())},
+  stories:Math.round(28*f*vm()),
+  er:{fb:B.fbER*mult(.5,2.1),ig:B.igER*mult(.5,2.2),yt:0.21*mult(.5,2),tt:B.ttER*mult(.4,2.3)},
+  erReach:{fb:1.3*mult(.5,1.8),ig:3.1*mult(.5,1.8),tt:4.2*mult(.5,1.8)},
+  watch:{ytPct:mult(24,58),ytHrs:Math.round(140*f*scale*vm()),ttComp:mult(38,74),reelsAvg:mult(5.5,14)},
+  ctr:{yt:mult(2.2,6.4),email:B.emailClick*mult(.5,1.9),web:mult(1.2,3.4),gsc:mult(1.4,4.8)},
+  conv:{web:B.webConv*mult(.45,1.7),email:mult(.4,2.2)},
+  email:{open:mult(26,44),ctor:mult(3,9),rpe:mult(.05,.28),list:Math.round(2400*scale*sm(.4,1.5)),unsub:mult(.08,.3)},
+  web:{sessions:Math.round(9500*f*scale*vm()),engRate:mult(52,74),keyEvents:0,perfScore:Math.round(sm(58,94))},
+  gsc:{clicks:Math.round(2100*f*scale*vm()),impr:Math.round(88000*f*scale*vm()),pos:sm(6,22),branded:mult(22,58)},
+  aio:{sov:mult(2,26),mention:Math.round(30*f*vm()),cited:Math.round(sm(0,7))},
+  local:{rating:sm(3.9,4.9),reviews:Math.round(180*scale*sm(.3,1.5)),vel30:Math.round(sm(2,26)),respRate:sm(35,96),calls:Math.round(90*f*scale*vm()),directions:Math.round(240*f*scale*vm()),respHrs:Math.round(sm(3,40))},
+  trend:{engage:series(r,d0(4000*f*scale,P.n),.18,P.n,.012),sessions:series(r,d0(9500*f*scale,P.n),.15,P.n,.01),gscClicks:series(r,d0(2100*f*scale,P.n),.2,P.n,.008),gscImpr:series(r,d0(88000*f*scale,P.n),.16,P.n,.03),actions:series(r,d0(300*f*scale,P.n),.22,P.n,.015)}
+ };
+ function d0(total,n){return total/n}
+ d.web.keyEvents=Math.round(d.web.sessions*d.conv.web/100);
+ d.local.unanswered=Math.max(0,Math.round(d.local.vel30*(1-d.local.respRate/100)*0.5));
+ d.web.bookviews=Math.round(d.web.sessions*0.07);
+ d.feeds={GA4:true,GSC:true,Meta:true,GBP:(hash(b.n)%10)>1,Toast:TOAST_BRANDS.test(b.n)};
+ d.completeness=Math.round(Object.values(d.feeds).filter(Boolean).length/5*100);
+ return d;
+}
+/* True portfolio rollup: aggregated from company records (sums; denominator-weighted rates; review-weighted rating) */
+function portfolioData(){
+ const parts=BRANDS.filter(x=>x.seg!=="portfolio").map(x=>({b:x,d:brandDataRaw(x)}));
+ const P=period();
+ const sum=f=>parts.reduce((a,p)=>a+f(p.d),0);
+ const wavg=(vf,wf)=>{const W=sum(wf)||1;return parts.reduce((a,p)=>a+vf(p.d)*wf(p.d),0)/W};
+ /* aggregate change: prior totals reconstructed per brand from its own delta, then delta of totals */
+ const aggDelta=(mode,key,wf)=>{
+  let cur=0,prior=0;
+  parts.forEach(p=>{const m=wf(p.d);const dl=(mode==="yoy"?p.d.dYoY:p.d.dPrior)[key];cur+=m;prior+=m/(1+dl/100)});
+  return (cur/prior-1)*100;
+ };
+ const W={fb:d=>d.followers.fb,ig:d=>d.followers.ig,yt:d=>d.followers.yt,tt:d=>d.followers.tt,web:d=>d.web.sessions,email:d=>d.email.list,gsc:d=>d.gsc.clicks,local:d=>d.local.calls+d.local.directions,paid:d=>d.web.sessions};
+ const mk=mode=>Object.fromEntries(Object.keys(W).map(k=>[k,aggDelta(mode,k,W[k])]));
+ const d={
+  isPortfolio:true,parts,
+  followers:{fb:sum(x=>x.followers.fb),ig:sum(x=>x.followers.ig),yt:sum(x=>x.followers.yt),tt:sum(x=>x.followers.tt)},
+  dPrior:mk("prior"),dYoY:mk("yoy"),
+  posts:{fb:sum(x=>x.posts.fb),ig:sum(x=>x.posts.ig),yt:sum(x=>x.posts.yt),tt:sum(x=>x.posts.tt),blog:sum(x=>x.posts.blog),email:sum(x=>x.posts.email)},
+  stories:sum(x=>x.stories),
+  er:{fb:wavg(x=>x.er.fb,x=>x.followers.fb),ig:wavg(x=>x.er.ig,x=>x.followers.ig),yt:wavg(x=>x.er.yt,x=>x.followers.yt),tt:wavg(x=>x.er.tt,x=>x.followers.tt)},
+  erReach:{fb:wavg(x=>x.erReach.fb,x=>x.followers.fb),ig:wavg(x=>x.erReach.ig,x=>x.followers.ig),tt:wavg(x=>x.erReach.tt,x=>x.followers.tt)},
+  watch:{ytPct:wavg(x=>x.watch.ytPct,x=>x.followers.yt),ytHrs:sum(x=>x.watch.ytHrs),ttComp:wavg(x=>x.watch.ttComp,x=>x.followers.tt),reelsAvg:wavg(x=>x.watch.reelsAvg,x=>x.followers.ig)},
+  ctr:{yt:wavg(x=>x.ctr.yt,x=>x.followers.yt),email:wavg(x=>x.ctr.email,x=>x.email.list),web:wavg(x=>x.ctr.web,x=>x.web.sessions),gsc:wavg(x=>x.ctr.gsc,x=>x.gsc.impr)},
+  conv:{web:0,email:wavg(x=>x.conv.email,x=>x.email.list)},
+  email:{open:wavg(x=>x.email.open,x=>x.email.list),ctor:wavg(x=>x.email.ctor,x=>x.email.list),rpe:wavg(x=>x.email.rpe,x=>x.email.list),list:sum(x=>x.email.list),unsub:wavg(x=>x.email.unsub,x=>x.email.list)},
+  web:{sessions:sum(x=>x.web.sessions),engRate:wavg(x=>x.web.engRate,x=>x.web.sessions),keyEvents:sum(x=>x.web.keyEvents),perfScore:Math.round(wavg(x=>x.web.perfScore,x=>x.web.sessions)),bookviews:sum(x=>x.web.bookviews)},
+  gsc:{clicks:sum(x=>x.gsc.clicks),impr:sum(x=>x.gsc.impr),pos:wavg(x=>x.gsc.pos,x=>x.gsc.impr),branded:wavg(x=>x.gsc.branded,x=>x.gsc.impr)},
+  aio:{sov:wavg(x=>x.aio.sov,x=>x.gsc.impr),mention:sum(x=>x.aio.mention),cited:Math.round(wavg(x=>x.aio.cited,()=>1))},
+  local:{rating:wavg(x=>x.local.rating,x=>x.local.reviews),reviews:sum(x=>x.local.reviews),vel30:sum(x=>x.local.vel30),respRate:wavg(x=>x.local.respRate,x=>x.local.reviews),calls:sum(x=>x.local.calls),directions:sum(x=>x.local.directions),respHrs:Math.round(wavg(x=>x.local.respHrs,x=>x.local.reviews)),unanswered:sum(x=>x.local.unanswered)},
+  trend:{engage:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.engage[i])),sessions:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.sessions[i])),gscClicks:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.gscClicks[i])),gscImpr:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.gscImpr[i])),actions:Array.from({length:P.n},(_,i)=>sum(x=>x.trend.actions[i]))},
+  feeds:{GA4:true,GSC:true,Meta:true,GBP:parts.every(p=>p.d.feeds.GBP),Toast:false},
+  completeness:Math.round(parts.reduce((a,p)=>a+p.d.completeness,0)/parts.length)
+ };
+ d.conv.web=d.web.keyEvents/d.web.sessions*100;
+ return d;
+}
+function brandData(b){return b.seg==="portfolio"?portfolioData():brandDataRaw(b)}
+
+/* ---------- Campaigns ---------- */
+function campaigns(b){
+ const r=rng(hash(b.n+"paid"));const B=BENCH[b.seg];
+ const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const slug=b.n.toLowerCase().replace(/[^a-z]+/g,"").slice(0,10);
+ const objs=b.seg==="dining"?[["Calls","calls"],["Traffic","visits"],["Awareness","reached"]]
+  :b.seg==="realestate"?[["Leads","leads"],["Leads","leads"],["Traffic","visits"]]
+  :b.seg==="retail"?[["Sales","purchases"],["Traffic","visits"]]
+  :[["Bookings","bookings"],["Leads","leads"],["Awareness","reached"]];
+ const plats=["Meta","Google","Meta","Google","TikTok"];
+ const n=b.seg==="portfolio"?8:3+Math.floor(r()*3);
+ const out=[];
+ for(let i=0;i<n;i++){
+  const [obj,unit]=objs[i%objs.length];const plat=plats[i%plats.length];
+  const lifetime=r()>0.5;
+  const budget=Math.round(mult(800,9000)/50)*50;
+  const flightDays=Math.round(mult(21,90));
+  const elapsed=Math.min(flightDays,Math.round(flightDays*mult(.15,1.05)));
+  const daysLeft=flightDays-elapsed;
+  const pace=mult(.62,1.38);
+  const spent=Math.min(budget*1.05,budget*(elapsed/flightDays)*pace);
+  const cpr=obj==="Sales"?mult(8,30):obj==="Awareness"?0:mult(9,80);
+  const results=obj==="Awareness"?Math.round(spent*mult(80,240)):Math.round(spent/cpr);
+  const freq=plat==="Meta"?mult(1.2,4.6):0;
+  const ctr=(plat==="Google"?B.gadsCTR:B.metaCTR)*mult(.55,1.5);
+  const status=daysLeft<=0?"Ended":(elapsed<5?"Learning":"Active");
+  out.push({name:`${plat.toLowerCase()}_${slug}_${obj.toLowerCase()}_${["locals","visitors","bostonmetro","retarget"][i%4]}_2026q3`,plat,obj,unit,status,lifetime,budget,flightDays,elapsed,daysLeft,spent,results,cpr,freq,ctr,roas:obj==="Sales"?mult(1.4,5.4):null});
+ }
+ return out;
+}
+function paidIssues(b){const cams=campaigns(b);return cams.filter(c=>{const p=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(p-1)>0.15||c.freq>=3.5}).length}
+
+/* ---------- Revenue centers ---------- */
+const revcState={};
+function revCenters(b){if(revcState[b.n])return revcState[b.n];revcState[b.n]=[...(REVC_OVERRIDE[b.n]||REVC_DEFAULT[b.seg])];return revcState[b.n]}
+function revData(b){
+ const centers=revCenters(b);
+ const r=rng(hash(b.n+"rev"+centers.join("")));
+ const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const scale=b.seg==="portfolio"?18:(0.4+r()*2.2);
+ const rows=centers.map(c=>{const mtd=Math.round(38000*scale*mult(.15,1.6));return {c,mtd,today:Math.round(mtd/22*mult(.4,1.9)),yoy:mult(-18,32),sig:{search:mult(10,95),web:mult(10,95),reviews:mult(5,95),content:mult(5,95),tags:mult(5,95)}}});
+ const totMtd=rows.reduce((a,x)=>a+x.mtd,0);
+ const shares=rows.map(x=>x.mtd/totMtd*100);
+ const rank=(arr,v)=>arr.filter(x=>x<=v).length/arr.length*100;
+ rows.forEach((x,i)=>{
+  x.share=shares[i];
+  x.D=Math.round(.25*x.sig.search+.25*x.sig.web+.20*x.sig.reviews+.15*x.sig.content+.15*x.sig.tags);
+  x.R=Math.round(.6*rank(shares,x.share)+.4*Math.max(0,Math.min(100,50+x.yoy*2)));
+  x.gap=x.D-x.R;
+  x.status=(x.yoy<0||x.gap<=-15)?"under":(x.gap>=15?"grow":"healthy");
+ });
+ return {rows,totMtd,today:rows.reduce((a,x)=>a+x.today,0),toast:TOAST_BRANDS.test(b.n)};
+}
+
+/* ---------- Mentions & demographics ---------- */
+function mentionData(b){
+ const enabled=mentionSources(b).filter(x=>x.on).map(x=>x.n);
+ if(!enabled.length)return{enabled,weekly:[],recent:[],total:0,pos:0,neg:0};
+ const r=rng(hash(b.n+"mentions"+enabled.join("")));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const scale=b.seg==="portfolio"?10:(0.4+r()*2);
+ const weekly=enabled.map(()=>Array.from({length:6},()=>Math.round(mult(0,9)*scale)));
+ const SNIP={
+  dining:[["“Best meal we've had on the harbor — ask for the window tables.”","Positive"],["“Anyone been since the renovation? Thinking of going Saturday.”","Neutral"],["“Waited 40 minutes past our reservation. Food was good, service overwhelmed.”","Negative"],["“The wood-fired special is the move. Trust me.”","Positive"],["“Tagged in 14 guest photos this week — pizza close-ups lead.”","Positive"]],
+  hospitality:[["“Views from the room were unreal. Already rebooked for fall.”","Positive"],["“Best places to stay near the water? Considering this one.”","Neutral"],["“Beautiful property but the pool area was crowded by 10am.”","Negative"],["“Their sunrise drone reel keeps showing up on my feed — stunning.”","Positive"],["“Named in a 'best waterfront weekends' roundup.”","Positive"]],
+  realestate:[["“They built our neighbor's place — craftsmanship is next level.”","Positive"],["“Anyone used them for a remodel? Getting quotes now.”","Neutral"],["“Gorgeous portfolio, but book early — long waitlist.”","Neutral"],["“Before/after kitchen post got shared in a design group.”","Positive"],["“Featured in a regional 'best builders' list.”","Positive"]],
+  marine:[["“They repowered our outboard in a week. Honest shop.”","Positive"],["“Slip availability for next season — anyone know the waitlist?”","Neutral"],["“Storage rates went up this year. Still worth it for the service.”","Neutral"],["“Launch-day photo got picked up by a boating page.”","Positive"],["“Recommended by three people in the harbor thread.”","Positive"]],
+  retail:[["“Grabbed the new Helly Hansen drop — quality stuff.”","Positive"],["“Do they restock beanies before the holidays?”","Neutral"],["“Prices are resort-level, but the staff picks are solid.”","Neutral"],["“Fit-check reel made me stop by. Bought two things.”","Positive"],["“Mentioned in a 'what to pack for Loon' guide.”","Positive"]]
+ };
+ const snips=SNIP[b.seg==="portfolio"?"hospitality":b.seg];
+ const recent=Array.from({length:6},()=>{const s=enabled[Math.floor(r()*enabled.length)];const sn=snips[Math.floor(r()*snips.length)];return {ago:Math.round(mult(0,13)),src:s,text:sn[0],sent:sn[1]}}).sort((a,c)=>a.ago-c.ago);
+ return {enabled,weekly,recent,total:weekly.reduce((a,row)=>a+row.reduce((x,y)=>x+y,0),0),pos:Math.round(mult(58,84)),neg:Math.round(mult(3,14))};
+}
+function demoData(b){
+ const r=rng(hash(b.n+"demo"));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ let ages=[["18–24",mult(4,14)],["25–34",mult(14,32)],["35–44",mult(16,30)],["45–54",mult(12,24)],["55–64",mult(8,22)],["65+",mult(4,18)]];
+ const tot=ages.reduce((a,x)=>a+x[1],0);ages=ages.map(([k,v])=>[k,v/tot*100]);
+ const female=mult(42,64);
+ const nhBrand=/South Peak|Timber|Basecamp|Snowfish|Bluebird|Mills|Mountain|Coffee|Shop|Whale|Alpine/.test(b.n);
+ const geo=nhBrand
+  ?[["Greater Boston, MA",mult(24,38)],["Southern NH",mult(12,22)],["Hartford / CT",mult(7,14)],["NY metro",mult(5,12)],["Local (Lincoln–Woodstock)",mult(6,14)]]
+  :[["Greater Boston, MA",mult(22,36)],["Cape Cod & Islands (local)",mult(12,24)],["Providence, RI",mult(8,16)],["Hartford / CT",mult(6,12)],["NY metro",mult(5,12)]];
+ return {ages,female,geo,newPct:mult(55,78),mobile:mult(58,82),emailOlder:mult(8,20)};
+}
+
+/* ---------- Helpers ---------- */
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":Math.round(n).toString();
+const pct=(n,d)=>{if(d===undefined)d=n<1?2:n<10?1:0;return n.toFixed(d)+"%"};
+function pill(val,bench,src){
+ const ratio=val/bench;
+ const cls=ratio>=1.15?"above":ratio>=0.85?"at":"below";
+ const lbl=cls==="above"?"Strong":cls==="at"?"At median":"Below median";
+ return `<span class="pill ${cls}" title="${src||"Industry benchmark — see spec appendix"}">${lbl}</span>`;
+}
+function cmpLabel(){
+ const days=document.getElementById("rangeSel").value;
+ if(state.cmp==="yoy"){
+  if(days==="365")return"vs 2025 YTD";
+  if(days==="1")return"vs same weekday last year";
+  if(days==="7")return"vs same week last year";
+  return"vs same "+days+" days last year";
+ }
+ if(days==="1")return"vs the day before";
+ return "vs prior "+days+" days";
+}
+function delta(v){const cls=v>0.3?"up":v<-0.3?"down":"flat";const sign=v>0?"+":"";return `<span class="delta ${cls}">${sign}${v.toFixed(1)}% ${cmpLabel()}</span>`}
+function getD(d,key){return state.cmp==="yoy"?d.dYoY[key]:d.dPrior[key]}
+function spark(data,color){
+ const w=200,h=34,min=Math.min(...data),max=Math.max(...data),rg=(max-min)||1;
+ const pts=data.map((v,i)=>`${(i/(data.length-1)*w).toFixed(1)},${(h-3-((v-min)/rg)*(h-8)).toFixed(1)}`).join(" ");
+ return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color||"#6E8CAD"}" stroke-width="2"/></svg>`;
+}
+/* metric card; optional status chip only for exceptional states (e.g. unavailable) */
+function kpi(label,val,deltaHtml,benchHtml,sub,sparkHtml,small,src){
+ const chip=src&&src!=="sample"?`<span class="pill sample">${src}</span>`:"";
+ return `<div class="card kpi ${small?"small":""}"><div class="label"><span>${label}</span><span style="display:flex;gap:4px">${benchHtml||""}${chip}</span></div><div class="val">${val}</div>${deltaHtml||""}${sub?`<div class="sub2">${sub}</div>`:""}${sparkHtml||""}</div>`;
+}
+let charts=[];
+function destroyCharts(){charts.forEach(c=>c.destroy());charts=[]}
+function lineChart(id,labels,datasets){
+ const el=document.getElementById(id);if(!el)return;
+ charts.push(new Chart(el,{type:"line",data:{labels,datasets:datasets.map(d=>({...d,tension:.35,borderWidth:2.5,pointRadius:0,fill:d.fill??false}))},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11,family:"Jost"}}}},scales:{y:{grid:{color:"#eef1f4"},ticks:{font:{size:10.5,family:"Jost"}}},x:{grid:{display:false},ticks:{font:{size:10.5,family:"Jost"}}}}}}));
+}
+function barChart(id,labels,datasets,stacked){
+ const el=document.getElementById(id);if(!el)return;
+ charts.push(new Chart(el,{type:"bar",data:{labels,datasets},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:10.5,family:"Jost"}}}},scales:{x:{stacked:!!stacked,grid:{display:false},ticks:{font:{size:10.5,family:"Jost"}}},y:{stacked:!!stacked,grid:{color:"#eef1f4"},ticks:{font:{size:10.5,family:"Jost"}}}}}}));
+}
+const ALGO_WEATHER=`<strong>Algorithm weather:</strong> no Google update currently rolling out. 2026 confirmed so far: <a href="https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history" style="color:var(--steel)">March core (Mar 27–Apr 8), March spam, May core (May 21–Jun 2)</a>. Dips inside those windows were industry-wide — judge search changes outside them.`;
+function dataStatus(d){
+ const rows=[["Google Analytics 4","pending","—"],["Google Search Console","pending","—"],["Meta Business Suite","pending","—"],["Google Business Profile",d.feeds.GBP?"pending":"unavailable — connect",d.feeds.GBP?"—":"apply for API access"],["Toast POS",d.feeds.Toast?"pending":"unavailable — no POS",d.feeds.Toast?"—":"n/a for this brand"],["Monthly P&L import","unavailable — awaiting first upload","upload monthly from accounting; maps lines to revenue centers"],["Email platform","pending","—"],["Reviews (Google/Yelp/TripAdvisor)","pending","—"]];
+ return `<details><summary>Data status by source</summary><div class="inner"><table><thead><tr><th>Source</th><th>Status</th><th>Last successful sync</th><th>Note</th></tr></thead><tbody>
+ ${rows.map(r=>`<tr><td>${r[0]}</td><td><span class="pill ${r[1].startsWith("unavailable")?"below":"sample"}">${r[1].split(" — ")[0]}</span></td><td>${r[1].startsWith("unavailable")?"never":"pending connection"}</td><td>${r[2]}</td></tr>`).join("")}
+ </tbody></table><div class="caption">In production every metric shows LIVE with its source's last sync time; anything else renders as "insufficient data" rather than a colored judgment.</div></div></details>`;
+}
+
+/* ---------- TL;DR ---------- */
+function tldr(b,d){
+ const B=BENCH[b.seg];
+ const chans=[["Instagram",d.er.ig/B.igER],["TikTok",d.er.tt/B.ttER],["Facebook",d.er.fb/B.fbER],["email",d.ctr.email/B.emailClick]];
+ chans.sort((a,c)=>c[1]-a[1]);
+ const best=chans[0],worst=chans[chans.length-1];
+ const dir=getD(d,"web")>=0?"up":"down";
+ const name=b.n==="Portfolio Rollup"?"The portfolio":b.n;
+ return `<b>${name}:</b> demand is <b>${dir} ${Math.abs(getD(d,"web")).toFixed(0)}%</b> ${cmpLabel()}, with ${fmt(d.web.keyEvents)} ${B.result} and a ${d.local.rating.toFixed(1)}★ Google rating (${d.local.vel30} new reviews/30 days${d.local.unanswered?`, <b>${d.local.unanswered} negative unanswered</b>`:""}).
+ <b>Working:</b> ${best[0]} ${best[1]>=1?"is beating":"is near"} its industry median. <b>Concern:</b> ${worst[0]} is ${Math.round((1-worst[1])*100)>0?Math.round((1-worst[1])*100)+"% below":"at"} median.
+ <b>Next move:</b> ${d.local.unanswered>2?"clear the unanswered reviews today":d.aio.cited<4?"win AI citations — only "+d.aio.cited+" of 12 tracked “best of” questions mention us":"shift one weekly static post to people-on-camera video"}.`;
+}
+
+/* ---------- Owner homepage (portfolio): exceptions + decisions, not another profile ---------- */
+function renderOwnerHome(d){
+ const el=document.getElementById("view-exec");
+ const rowsData=d.parts.map(p=>{
+  const x=p.d;
+  const outcome=getD(x,"web");
+  const demand=getD(x,"gsc");
+  const plan=Math.round(26*period().days/30);
+  const activity=Math.round((x.posts.ig+x.posts.fb+x.posts.tt)/plan*100);
+  const paid=paidIssues(p.b);
+  const repRisk=x.local.rating<4.3||x.local.unanswered>2;
+  let sev=0;
+  if(repRisk)sev+=3;if(outcome<0)sev+=2;if(demand<0)sev+=1;if(paid>0)sev+=1;if(activity<70)sev+=1;if(x.completeness<80)sev+=1;
+  let action="Stay the course";
+  if(repRisk)action=`Respond to ${x.local.unanswered} unanswered reviews today`;
+  else if(outcome<0&&demand>=0)action="Demand is fine, conversion leaking — check booking path";
+  else if(demand<0)action="Rebuild visibility: content + Business Profile";
+  else if(paid>0)action=`Fix ${paid} campaign${paid>1?"s":""} (pacing/creative)`;
+  else if(activity<70)action=`Publish to plan (at ${activity}%)`;
+  else if(x.completeness<80)action="Connect missing data feeds";
+  return {b:p.b,x,outcome,demand,activity,paid,repRisk,sev,action};
+ }).sort((a,c)=>c.sev-a.sev);
+ const attention=rowsData.filter(r=>r.sev>=3).length;
+ /* under-promoted revenue centers across the portfolio */
+ const opps=[];
+ d.parts.forEach(p=>{revData(p.b).rows.forEach(rw=>{if(rw.status==="grow")opps.push({brand:p.b.n,c:rw.c,gap:rw.gap})})});
+ opps.sort((a,c)=>c.gap-a.gap);
+ /* top five decisions from the worst signals */
+ const dec=[];
+ const worstRep=rowsData.find(r=>r.repRisk);
+ if(worstRep)dec.push({d:`Respond to ${worstRep.x.local.unanswered} unanswered reviews at ${worstRep.b.n}; invite recent happy guests`,o:"Location mgr",due:"Today",i:"Protect local + AI discovery"});
+ const worstPaid=[...rowsData].sort((a,c)=>c.paid-a.paid)[0];
+ if(worstPaid&&worstPaid.paid>0)dec.push({d:`Fix ${worstPaid.paid} campaigns at ${worstPaid.b.n} — pacing or fatigued creative`,o:"Paid media",due:"This week",i:"Stop wasted spend"});
+ if(opps[0])dec.push({d:`Launch a content series for ${opps[0].c} at ${opps[0].brand} (demand outruns revenue by ${opps[0].gap} pts)`,o:"Content",due:"2 weeks",i:"Under-promoted revenue"});
+ const worstAct=[...rowsData].sort((a,c)=>a.activity-c.activity)[0];
+ if(worstAct)dec.push({d:`Restore posting cadence at ${worstAct.b.n} (at ${worstAct.activity}% of plan)`,o:"Social",due:"This week",i:"Reach recovery"});
+ const worstData=[...rowsData].sort((a,c)=>a.x.completeness-c.x.completeness)[0];
+ if(worstData)dec.push({d:`Connect missing data feeds for ${worstData.b.n} (${worstData.x.completeness}% complete)`,o:"Admin",due:"This month",i:"Trustworthy reporting"});
+ el.innerHTML=`
+  <div class="tldr"><b>Portfolio pulse:</b> ${fmt(d.web.keyEvents)} qualified outcomes and ${fmt(d.local.calls)} calls this period (${getD(d,"web")>=0?"+":""}${getD(d,"web").toFixed(0)}% ${cmpLabel()}), reputation ${d.local.rating.toFixed(1)}★ review-weighted across ${fmt(d.local.reviews)} reviews.
+  <b>${attention} of ${rowsData.length} companies need attention</b> — the exception table below says which and why, so you never open 24 profiles to find three problems.</div>
+  <div class="algoweather">${ALGO_WEATHER}</div>
+  <div class="grid hero">
+   ${kpi("Seen — visibility",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Search appearances (sum). AI mentions tracked separately: "+fmt(d.aio.mention),spark(d.trend.gscImpr))}
+   ${kpi("Visited — interest",fmt(d.web.sessions),delta(getD(d,"web")),"","Website sessions (sum), "+pct(d.web.engRate,0)+" engaged",spark(d.trend.sessions))}
+   ${kpi("Intent shown",fmt(d.local.directions),delta(getD(d,"local")),"","Direction requests. Booking-page views separate: "+fmt(d.web.bookviews),spark(d.trend.actions))}
+   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"web")),pill(d.conv.web,BENCH.portfolio.webConv),BENCH.portfolio.result+" (sum). Calls separate: "+fmt(d.local.calls),spark(d.trend.actions))}
+  </div>
+  <div class="caption" style="margin-top:6px">Funnel stages are never added together — each stage keeps its own unit. Rollup math: counts summed; rates denominator-weighted; rating review-count-weighted; changes computed from aggregate current vs aggregate prior totals.</div>
+  <h2>Company exceptions <span class="note">sorted by severity — worst first · ${cmpLabel()}</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Company</th><th>Outcomes</th><th>Reputation</th><th>Activity vs plan</th><th>Paid health</th><th>Demand trend</th><th>Data</th><th>Recommended action</th></tr></thead><tbody>
+  ${rowsData.map(r=>`<tr>
+   <td><strong>${r.b.n}</strong><div class="sub2" style="font-size:10.5px;color:var(--muted)">${SEGLABEL[r.b.seg]}</div></td>
+   <td class="${r.outcome>=0?"up":"down"}">${fmt(r.x.web.keyEvents)} · ${r.outcome>=0?"+":""}${r.outcome.toFixed(0)}%</td>
+   <td>${r.x.local.rating.toFixed(1)}★${r.x.local.unanswered?` · <span class="pill below">${r.x.local.unanswered} unanswered</span>`:""}</td>
+   <td class="${r.activity>=70?"":"down"}">${r.activity}%</td>
+   <td>${r.paid===0?'<span class="pill above">OK</span>':`<span class="pill ${r.paid>1?"below":"at"}">${r.paid} issue${r.paid>1?"s":""}</span>`}</td>
+   <td class="${r.demand>=0?"up":"down"}">${r.demand>=0?"+":""}${r.demand.toFixed(0)}%</td>
+   <td>${r.x.completeness<80?`<span class="pill at">${r.x.completeness}%</span>`:r.x.completeness+"%"}</td>
+   <td class="sub2">${r.action}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="grid two" style="margin-top:14px">
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Top five decisions this week</h2>
+   <table><thead><tr><th>Decision</th><th>Owner</th><th>Due</th><th>Expected impact</th><th>Status</th></tr></thead><tbody>
+   ${dec.slice(0,5).map(x=>`<tr><td><strong>${x.d}</strong></td><td>${x.o}</td><td>${x.due}</td><td>${x.i}</td><td><span class="pill info">Open</span></td></tr>`).join("")}
+   </tbody></table></div>
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Portfolio opportunities</h2>
+   <div class="insight idea"><span class="tag">Cross-brand</span><h3>"One perfect day" itinerary packages</h3><p>Dining, stay, and activity brands share the same visitor — packaged itineraries (Snowfish dinner + South Peak stay + Alpine Adventures) convert shared audiences no single brand can.</p></div>
+   <div class="insight idea"><span class="tag">Audience overlap</span><h3>Cross-brand retargeting pools</h3><p>Website visitors of one Lincoln brand are warm audiences for the others; shared Meta custom audiences cut acquisition cost across the NH cluster.</p></div>
+   <div class="insight"><span class="tag">Under-promoted revenue</span><h3>${opps.length?opps.slice(0,3).map(o=>`${o.c} (${o.brand}, +${o.gap})`).join(" · "):"No demand-revenue gaps ≥15 this period"}</h3><p>Centers where demand signals outrun revenue share — the Revenue Centers tab has the evidence per brand.</p></div>
+   </div>
+  </div>
+  ${dataStatus(d)}`;
+ destroyCharts();
+}
+
+/* ---------- Brand scorecard: funnel, no mixed units ---------- */
+function renderExec(b,d){
+ if(d.isPortfolio){renderOwnerHome(d);return}
+ const B=BENCH[b.seg];
+ const el=document.getElementById("view-exec");
+ const P=period();
+ el.innerHTML=`
+  <div class="tldr">${tldr(b,d)}</div>
+  <div class="algoweather">${ALGO_WEATHER}</div>
+  <div class="grid hero">
+   ${kpi("Seen — visibility",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Search appearances. AI mentions tracked separately: "+fmt(d.aio.mention),spark(d.trend.gscImpr))}
+   ${kpi("Visited — interest",fmt(d.web.sessions),delta(getD(d,"web")),"","Website sessions, "+pct(d.web.engRate,0)+" engaged",spark(d.trend.sessions))}
+   ${kpi("Intent shown",fmt(d.local.directions),delta(getD(d,"local")),"","Direction requests. Booking-page views separate: "+fmt(d.web.bookviews),spark(d.trend.actions))}
+   ${kpi("Outcomes",fmt(d.web.keyEvents),delta(getD(d,"web")),pill(d.conv.web,B.webConv),B.result.charAt(0).toUpperCase()+B.result.slice(1)+". Calls tracked separately: "+fmt(d.local.calls),spark(d.trend.actions))}
+  </div>
+  <div class="caption" style="margin-top:6px">The funnel keeps each stage in its own unit — nothing here is added across unlike measures. Where demand leaks is visible stage to stage.</div>
+  <div class="grid two" style="margin-top:12px">
+    <div class="card"><h2 style="margin-top:0;font-size:15px">${getD(d,"gsc")>getD(d,"web")?"More people see us than click — that's the new normal, not a failure":"Visits are keeping pace with visibility"} <span class="note">${P.days===1?"by hour":P.days===7?"by day":P.days===365?"by month":"by week"}</span></h2><div class="chartbox"><canvas id="execTrend"></canvas></div>
+    <div class="caption">Google answers many questions on its own page now. Being seen still builds the brand even when clicks lag. AI-assistant visits are few but high-intent — see Channels → Search &amp; AI.</div></div>
+    <div class="card"><h2 style="margin-top:0;font-size:15px">What matters this period</h2>${execInsights(b,d).map(i=>`<div class="insight ${i.cls}"><span class="tag">${i.tag}</span><h3>${i.h}</h3><p>${i.p}</p><div class="ev">${i.ev}</div></div>`).join("")}</div>
+  </div>
+  <details><summary>All channels scoreboard</summary><div class="inner">
+  <table><thead><tr><th>Channel</th><th>Audience</th><th>Change</th><th>Output</th><th>Engagement</th><th>Industry median</th><th>Standing</th></tr></thead><tbody>
+    <tr><td><strong>Instagram</strong></td><td>${fmt(d.followers.ig)}</td><td>${delta(getD(d,"ig"))}</td><td>${d.posts.ig} posts + ${d.stories} stories</td><td>${pct(d.er.ig)}</td><td>${pct(B.igER)}</td><td>${pill(d.er.ig,B.igER,"Rival IQ 2026 per-follower medians")}</td></tr>
+    <tr><td><strong>TikTok</strong></td><td>${fmt(d.followers.tt)}</td><td>${delta(getD(d,"tt"))}</td><td>${d.posts.tt} videos</td><td>${pct(d.er.tt)}</td><td>${pct(B.ttER)}</td><td>${pill(d.er.tt,B.ttER,"Rival IQ 2026 per-follower medians")}</td></tr>
+    <tr><td><strong>Facebook</strong></td><td>${fmt(d.followers.fb)}</td><td>${delta(getD(d,"fb"))}</td><td>${d.posts.fb} posts</td><td>${pct(d.er.fb)}</td><td>${pct(B.fbER)}</td><td>${pill(d.er.fb,B.fbER,"Rival IQ 2026 per-follower medians")}</td></tr>
+    <tr><td><strong>YouTube</strong></td><td>${fmt(d.followers.yt)}</td><td>${delta(getD(d,"yt"))}</td><td>${d.posts.yt} videos</td><td>${pct(d.er.yt)}</td><td>0.21%</td><td>${pill(d.er.yt,0.21,"Quid 2026 median")}</td></tr>
+    <tr><td><strong>Email</strong></td><td>${fmt(d.email.list)} subscribers</td><td>${delta(getD(d,"email"))}</td><td>${d.posts.email} sends</td><td>${pct(d.ctr.email)} clicked</td><td>${pct(B.emailClick)}</td><td>${pill(d.ctr.email,B.emailClick,"MailerLite 2025 industry click rates")}</td></tr>
+    <tr><td><strong>Google Business Profile</strong></td><td>${fmt(d.local.calls)} calls</td><td>${delta(getD(d,"local"))}</td><td>${fmt(d.local.directions)} direction requests</td><td>${pct(d.local.respRate,0)} review response</td><td>80%</td><td>${pill(d.local.respRate,80,"Practitioner response-rate target")}</td></tr>
+  </tbody></table></div></details>
+  <details><summary>More measures</summary><div class="inner"><div class="grid kpis">
+    ${kpi("Marketing health (experimental)",Math.round(0.4*d.web.perfScore+0.3*Math.min(100,(d.er.ig/B.igER)*50+(d.er.tt/B.ttER)*25)+0.3*Math.min(100,(d.conv.web/B.webConv)*60+20))+"/100","","","Composite: site 40% + engagement 30% + conversion 30% — internal index, not an observed change",null,true)}
+    ${kpi("Audience, all channels",fmt(d.followers.fb+d.followers.ig+d.followers.yt+d.followers.tt),delta((getD(d,"fb")+getD(d,"ig")+getD(d,"tt"))/3),"","Trend signal, not a goal",null,true)}
+    ${kpi("Email revenue per send","$"+d.email.rpe.toFixed(2),delta(getD(d,"email")),pill(d.email.rpe,0.12,"Klaviyo 2025 median-beating RPE"),"Clicks "+pct(d.ctr.email)+" — the reliable email number",null,true)}
+    ${kpi("AI share of voice",pct(d.aio.sov,1),"","",d.aio.cited+" of 12 tracked questions cite us · needs live prompt tracking",null,true)}
+    ${kpi("Branded searches",pct(d.gsc.branded,0),delta(getD(d,"gsc")),"","Share of Google queries that are our name",null,true)}
+    ${kpi("Site performance",d.web.perfScore+"/100","",pill(d.web.perfScore,75,"Lighthouse passing threshold"),"Speed + engagement + conversion",null,true)}
+  </div></div></details>
+  ${dataStatus(d)}`;
+ destroyCharts();
+ lineChart("execTrend",P.labels,[
+  {label:"Times seen in search (÷10)",data:d.trend.gscImpr.map(v=>Math.round(v/10)),borderColor:"#6E8CAD"},
+  {label:"Website visits",data:d.trend.sessions.map(Math.round),borderColor:"#13416C"},
+  {label:"Engagements",data:d.trend.engage.map(Math.round),borderColor:"#a86f0e"}
+ ]);
+}
+
+function execInsights(b,d){
+ const name=b.n==="Portfolio Rollup"?"the portfolio":b.n;
+ const ev="Illustrative in prototype — in production this card links the posts compared, sample size, period, and outcome metric.";
+ const out=[];
+ out.push({cls:"",tag:"Working",h:"Video with people beats product-only",p:`Across ${name}, posts with staff or guests on camera earned about ${(2.1+d.er.ig).toFixed(1)}x the engagement of product-only posts this period.`,ev});
+ if(d.local.unanswered>2) out.push({cls:"alert",tag:"Needs attention",h:d.local.unanswered+" negative reviews are sitting unanswered",p:`Median response time is ${d.local.respHrs}h. Respond within 24 hours and take issues offline — response rate and speed feed both rankings and guest trust.`,ev:"From review-platform data; each review links directly to its reply screen in production."});
+ else if(d.local.rating<4.4) out.push({cls:"alert",tag:"Needs attention",h:"Google rating is below the 4.4★ practitioner threshold",p:`At ${d.local.rating.toFixed(1)}★, AI-driven recommendation analyses (Pluspoint, 2025) suggest discovery suffers. This is a practitioner finding, not a Google rule. Respond to every review; invite happy guests — no quotas, no scripts.`,ev});
+ else out.push({cls:"alert",tag:"Needs attention",h:"Seen more, clicked less",p:`Search appearances are growing faster than clicks. ${d.aio.cited} of 12 tracked "best of" questions cite this brand in AI answers; Seer Interactive (2025) measured cited brands earning ~35% more organic clicks than uncited ones.`,ev});
+ out.push({cls:"idea",tag:"Next move",h:seasonIdea(b),p:`Based on seasonal demand curves, this brand's stronger formats, and Rival IQ 2025 data showing carousels out-engaging Reels in most industries.`,ev});
+ return out;
+}
+function seasonIdea(b){
+ const m={dining:"'One dish, one story' weekly Reel + carousel recipe follow-up",hospitality:"3-part 'Summer on the water' drone Reel series with guest-photo carousels",realestate:"Before/after carousel series: one build decision explained per post",marine:"'Launch week' countdown series: service bay to first cruise",retail:"Weekly 'staff picks' carousel tied to mountain weather",portfolio:"Cross-brand 'One perfect day' itinerary linking dining, stay, and activity brands"};
+ return m[b.seg];
+}
+
+/* ---------- Website health, content freshness, and GBP hours ---------- */
+function webIssues(b){
+ const r=rng(hash(b.n+"health"));
+ const lib=[
+  ["High","Broken link (404)","/things-to-do links to a retired partner page","Update or remove the link"],
+  ["High","Hours mismatch","Site footer disagrees with the Google Business Profile","Fix the footer; publish correct hours from the editor below"],
+  ["Med","Past event still listed","'Summer Kickoff — June 14' remains on the Events page","Remove or archive the event"],
+  ["Med","Stale cornerstone page","Menu/offerings page last updated 8 months ago","Refresh it — stale pages lose AI citations"],
+  ["Med","Outdated seasonal banner","Winter promo banner still live in July","Swap to the summer campaign"],
+  ["Low","Missing schema field","LocalBusiness schema is missing priceRange","Add the field; match the Business Profile exactly"],
+  ["Low","Slow page on mobile","Gallery page loads its hero image in 4.8s","Compress and lazy-load the images"],
+  ["Low","Redirect chain","Old campaign URL hops through 3 redirects","Point the old URL straight at the destination"]
+ ];
+ const n=2+Math.floor(r()*4);
+ const idx=new Set();while(idx.size<n)idx.add(Math.floor(r()*lib.length));
+ const ord={High:0,Med:1,Low:2};
+ return [...idx].map(i=>lib[i]).sort((a,c)=>ord[a[0]]-ord[c[0]]);
+}
+/* ---------- Top search words & phrases (website via GSC, YouTube via Studio search terms) ---------- */
+function searchTerms(b){
+ const rg=regionOf(b);
+ const brandq=b.n.toLowerCase().replace(/\(.*\)/,"").trim();
+ const WEB={
+  dining:{cape:["waterfront restaurants falmouth ma","best seafood falmouth","raw bar cape cod","restaurants near falmouth harbor","outdoor dining falmouth"],nh:["restaurants lincoln nh","best pizza lincoln nh","breweries near loon mountain","après-ski lincoln nh","family restaurants north woodstock"],ri:["family restaurants warwick ri","best ice cream rhode island","awful awful newport creamery","restaurants near me warwick","ice cream near newport"],fl:["restaurants captiva island","waterfront dining sanibel"]},
+  hospitality:{cape:["hotels in falmouth ma","waterfront hotel cape cod","falmouth hotels with beach","where to stay falmouth heights","cape cod boutique hotel"],nh:["ski in ski out homes nh","loon mountain real estate","things to do lincoln nh","white mountains resort community","loon mountain summer"],ri:["wedding venues rhode island","waterfront wedding venue ri","marinas warwick ri","golf and wedding venue","event venues near providence"],fl:["captiva island vacation rentals","luxury beach house captiva","sanibel captiva rentals with pool"]},
+  realestate:{cape:["custom home builders cape cod","design build falmouth ma","55+ communities cape cod","kitchen remodel cape cod","home builders near me"],nh:["mountain furniture nh","custom homes lincoln nh","furniture stores white mountains","mountain home interior design"],ri:["custom home builders ri"],fl:["home builders captiva"]},
+  marine:{cape:["boat slips falmouth ma","outboard repair cape cod","marinas falmouth harbor","boat storage cape cod","yamaha outboard service near me"],nh:["boat services nh"],ri:["marinas warwick ri"],fl:["boat slips captiva"]},
+  retail:{nh:["ski shop lincoln nh","loon mountain apparel","gift shops lincoln nh","helly hansen near me","white mountains souvenirs"],cape:["gift shops falmouth"],ri:["gift shops warwick"],fl:["gift shops captiva"]},
+  portfolio:{cape:["things to do falmouth ma","cape cod weekend itinerary","waterfront dining and hotels cape cod"],nh:["things to do lincoln nh","loon mountain vacation"],ri:["things to do warwick ri"],fl:["captiva island vacation"]}
+ };
+ const YT={
+  dining:["wood fired pizza how it's made","best restaurants cape cod","behind the scenes restaurant kitchen","new england seafood","brewery tour new hampshire"],
+  hospitality:["loon mountain nh","cape cod hotels","new england weekend getaway","ski resort home tour","drone footage white mountains"],
+  realestate:["custom home build time lapse","kitchen remodel before and after","new england home design","mountain modern house tour","design build process explained"],
+  marine:["outboard repower","boat maintenance tips","yamaha vs mercury outboard","boat tour cape cod","winterizing a boat"],
+  retail:["what to pack for skiing","ski outfit ideas","helly hansen review","mountain town shopping"],
+  portfolio:["new england travel guide","white mountains nh","cape cod vacation","best of new england"]
+ };
+ const base=(WEB[b.seg]&&(WEB[b.seg][rg]||WEB[b.seg].cape))||WEB.portfolio.cape;
+ const r=rng(hash(b.n+"terms"));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const web=[{q:brandq,branded:true},...base.map(q=>({q,branded:false}))].map(x=>{
+  const impr=Math.round(mult(400,26000)*(x.branded?1.4:1));
+  const ctr=x.branded?mult(18,42):mult(0.8,6.5);
+  return {...x,impr,clicks:Math.round(impr*ctr/100),ctr,pos:x.branded?mult(1,1.8):mult(2,18),trend:mult(-20,45)};
+ }).sort((a,c)=>c.clicks-a.clicks).slice(0,6);
+ const yt=(YT[b.seg]||YT.portfolio).map(q=>({q,views:Math.round(mult(120,8200)),watch:mult(22,68)})).sort((a,c)=>c.views-a.views).slice(0,5);
+ return {web,yt};
+}
+const HOURS_DEFAULT={dining:["11:30","21:00"],hospitality:["08:00","20:00"],realestate:["09:00","17:00"],marine:["08:00","17:00"],retail:["10:00","18:00"],portfolio:["09:00","17:00"]};
+const gbpState={};
+function gbpData(b){
+ if(gbpState[b.n])return gbpState[b.n];
+ const [o,c]=HOURS_DEFAULT[b.seg]||["09:00","17:00"];
+ gbpState[b.n]={hours:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>({d,open:o,close:c,closed:b.seg==="realestate"&&(d==="Sat"||d==="Sun")})),holiday:"",published:null};
+ return gbpState[b.n];
+}
+
+/* interactions split per channel: likes / shares derived from engagement volume */
+function likeShare(b,d,ch){
+ const followers=ch==="yt"?d.followers.yt:d.followers[ch];
+ const posts=ch==="yt"?d.posts.yt:d.posts[ch];
+ const total=Math.max(1,followers*(d.er[ch]||0.2)/100*Math.max(1,posts));
+ const r=rng(hash(b.n+ch+"ls"));
+ const likePct=0.62+r()*0.16, sharePct=0.06+r()*0.1;
+ return {likes:Math.round(total*likePct),shares:Math.round(total*sharePct)};
+}
+
+/* ---------- Channels ---------- */
+function contentRows(b,d){
+ const r=rng(hash(b.n+"content"));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ return (CONTENT[b.seg]||CONTENT.portfolio).map((c,i)=>{
+  const score=92-i*9-((hash(b.n+c[1])%70)/10);
+  const vsNorm=(score/70-1)*100;
+  const verdict=score>=80?["Repeat","above"]:score>=60?["Adapt","at"]:["Stop","below"];
+  return {fmt:c[0],txt:c[1],ago:Math.round(mult(1,26)),boosted:r()>0.65,reach:Math.round(3400*(5-i)*(0.5+(hash(c[1])%100)/100)),score:score.toFixed(1),vsNorm,verdict};
+ });
+}
+function renderChannel(b,d,ch){
+ const B=BENCH[b.seg];const el=document.getElementById("view-channel");const P=period();
+ const tabs=["Instagram","TikTok","Facebook","YouTube","Email","Website","Blog","Search & AI","Local & Reviews","Mentions"];
+ let body="";
+ const rows=contentRows(b,d);
+ const rv=revData(b);
+ const neglected=rv.rows.filter(x=>x.sig.content<40&&x.D>=60).map(x=>x.c);
+ const contentTable=`<h2>Best-performing content <span class="note">score = engagement ×0.4 + watch-time ×0.3 + attributed actions ×0.3 · thumbnails + post links attach in production</span></h2>
+   <div class="card" style="overflow-x:auto"><table><thead><tr><th>Format</th><th>Content</th><th>When</th><th>Type</th><th>Reach</th><th>vs brand norm</th><th>Score</th><th>Verdict</th></tr></thead><tbody>
+   ${rows.map(x=>`<tr><td>${x.fmt}</td><td>${x.txt}</td><td>${x.ago}d ago</td><td>${x.boosted?"Boosted":"Organic"}</td><td>${fmt(x.reach)}</td><td class="${x.vsNorm>=0?"up":"down"}">${x.vsNorm>=0?"+":""}${x.vsNorm.toFixed(0)}%</td><td><strong>${x.score}</strong></td><td><span class="pill ${x.verdict[1]}">${x.verdict[0]}</span></td></tr>`).join("")}
+   </tbody></table>
+   ${neglected.length?`<div class="caption"><strong>Coverage gap:</strong> no meaningful content this period for ${neglected.join(", ")} despite rising demand signals — see Revenue Centers for the evidence.</div>`:""}</div>`;
+
+ if(ch==="Facebook") body=`<div class="grid kpis">
+   ${kpi("Followers",fmt(d.followers.fb),delta(getD(d,"fb")),"",null,null,true)}
+   ${kpi("Posts",d.posts.fb,"","",null,null,true)}
+   ${kpi("Engagement, per follower",pct(d.er.fb),delta(getD(d,"fb")),pill(d.er.fb,B.fbER,"Rival IQ per-follower medians"),"For benchmarking",null,true)}
+   ${kpi("Engagement, per reach",pct(d.erReach.fb),delta(getD(d,"ig")),pill(d.erReach.fb,1.3,"Hootsuite 2025 per-post averages"),"For judging content",null,true)}
+   ${kpi("Likes",fmt(likeShare(b,d,"fb").likes),delta(getD(d,"fb")),"","Counts, but the lightest signal",null,true)}
+   ${kpi("Shares",fmt(likeShare(b,d,"fb").shares),delta(getD(d,"fb")),"","The strongest organic signal — weighted 4x in scoring",null,true)}
+   ${kpi("Reels hold rate",pct(32+d.watch.ttComp/4,0),"","","Still watching at 15 seconds",null,true)}
+   ${kpi("Link clicks",pct(d.ctr.web/2),"","","Share of views that clicked through",null,true)}</div>
+   <p class="foot">Views-based only — Meta retired impressions Nov 2025. All uploaded video now counts as Reels.</p>`;
+ if(ch==="Instagram") body=`<div class="grid kpis">
+   ${kpi("Followers",fmt(d.followers.ig),delta(getD(d,"ig")),"",null,null,true)}
+   ${kpi("Posts / Stories",d.posts.ig+" / "+d.stories,"","",null,null,true)}
+   ${kpi("Engagement, per follower",pct(d.er.ig),delta(getD(d,"ig")),pill(d.er.ig,B.igER,"Rival IQ per-follower medians"),"For benchmarking",null,true)}
+   ${kpi("Engagement, per reach",pct(d.erReach.ig),"",pill(d.erReach.ig,3.1,"Hootsuite 2025 per-post averages"),"For judging content",null,true)}
+   ${kpi("Likes",fmt(likeShare(b,d,"ig").likes),delta(getD(d,"ig")),"","Signals existing followers — weighted lowest",null,true)}
+   ${kpi("Shares (sends)",fmt(likeShare(b,d,"ig").shares),delta(getD(d,"ig")),"","Top signal for reaching new people (Mosseri, 2025)",null,true)}
+   ${kpi("Shares per reach",pct(0.4+d.er.ig,2),"","","The ratio the algorithm actually ranks on",null,true)}
+   ${kpi("Reels average watch",d.watch.reelsAvg.toFixed(1)+"s","","","First 3 seconds decide distribution",null,true)}
+   ${kpi("Stories completion",pct(58+d.watch.ttComp/5,0),"",pill(58+d.watch.ttComp/5,70,"Dash Social avg completion"),null,null,true)}
+   ${kpi("Stories frame-1 exits",pct(18+d.er.fb*80,0),"","","Reach peaks at frames 6–13 — go longer (Socialinsider)",null,true)}</div>`;
+ if(ch==="YouTube") body=`<div class="grid kpis">
+   ${kpi("Subscribers",fmt(d.followers.yt),delta(getD(d,"yt")),"",null,null,true)}
+   ${kpi("Videos",d.posts.yt,"","",null,null,true)}
+   ${kpi("Thumbnail clicks",pct(d.ctr.yt,1),"",pill(d.ctr.yt,3.5,"Platform avg 3–4% (Humble & Brag)"),"4–6% is good, 6%+ excellent",null,true)}
+   ${kpi("Average % watched",pct(d.watch.ytPct,0),"",pill(d.watch.ytPct,23.7,"Retention Rabbit 2025 avg"),"Platform average ≈ 24%",null,true)}
+   ${kpi("Watch time",fmt(d.watch.ytHrs)+" hrs",delta(getD(d,"yt")),"",null,null,true)}
+   ${kpi("Engagement",pct(d.er.yt),"",pill(d.er.yt,0.21,"Quid 2026 median"),null,null,true)}</div>
+   <h2>Top search words &amp; phrases <span class="note">what viewers searched on YouTube before finding this channel — from YouTube Studio</span></h2>
+   <div class="card"><table><thead><tr><th>Search phrase</th><th>Views from search</th><th>Avg % watched</th><th>Use it</th></tr></thead><tbody>
+   ${searchTerms(b).yt.map((x,i)=>`<tr><td><strong>${x.q}</strong></td><td>${fmt(x.views)}</td><td>${pct(x.watch,0)}</td><td class="sub2">${i===0?"Put this phrase in the next title and thumbnail":x.watch>50?"High retention — make a follow-up on this topic":"Views without retention — the content isn't matching the search"}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption">YouTube search terms are free title research: viewers are telling you the exact words they use. Match titles to phrases with high retention; a high-view low-retention phrase means the video promises something it doesn't deliver.</div></div>
+   <p class="foot">Retention is the strongest lever: +10 points of average retention ≈ 25% more algorithmic reach (Retention Rabbit, 2025). Most viewers leave by 0:60 — front-load the payoff.</p>`;
+ if(ch==="TikTok") body=`<div class="grid kpis">
+   ${kpi("Followers",fmt(d.followers.tt),delta(getD(d,"tt")),"",null,null,true)}
+   ${kpi("Videos",d.posts.tt,"","",null,null,true)}
+   ${kpi("Engagement, per follower",pct(d.er.tt),delta(getD(d,"tt")),pill(d.er.tt,B.ttER,"Rival IQ per-follower medians"),"For benchmarking",null,true)}
+   ${kpi("Engagement, by views",pct(d.erReach.tt),"",pill(d.erReach.tt,4.2,"Socialinsider 2025 avg by views"),"For judging content",null,true)}
+   ${kpi("Likes",fmt(likeShare(b,d,"tt").likes),delta(getD(d,"tt")),"","Counts, but completion outranks it",null,true)}
+   ${kpi("Shares",fmt(likeShare(b,d,"tt").shares),delta(getD(d,"tt")),"","Gained ranking weight in 2025 — the breakout signal",null,true)}
+   ${kpi("Completion rate",pct(d.watch.ttComp,0),"",pill(d.watch.ttComp,60,"Shortimize practitioner threshold"),"80%+ typically precedes viral reach",null,true)}
+   ${kpi("Average watch time",(d.watch.ttComp/8).toFixed(1)+"s","","",null,null,true)}</div>`;
+ if(ch==="Email") body=`<div class="grid kpis">
+   ${kpi("Subscribers",fmt(d.email.list),delta(getD(d,"email")),"",null,null,true)}
+   ${kpi("Campaigns sent",d.posts.email,"","",null,null,true)}
+   ${kpi("People who clicked",pct(d.ctr.email),delta(getD(d,"email")),pill(d.ctr.email,B.emailClick,"MailerLite 2025 industry click rates"),"The reliable email number",null,true)}
+   ${kpi("Clicks per open",pct(d.email.ctor,1),"",pill(d.email.ctor,6.81,"MailerLite 2025 all-industry CTOR"),null,null,true)}
+   ${kpi("Revenue per send","$"+d.email.rpe.toFixed(2),delta(getD(d,"email")),pill(d.email.rpe,0.12,"Klaviyo 2025 median-beating RPE"),"$0.12 beats the industry median",null,true)}
+   ${kpi("Open rate — directional",pct(d.email.open,0),"","","Inflated 15–35% by Apple privacy; never set goals on it",null,true)}
+   ${kpi("Unsubscribes",pct(d.email.unsub),"",pill(0.44-d.email.unsub,0.22,"MailerLite 2025 avg unsubscribe"),"Keep under 0.22%",null,true)}</div>`;
+ if(ch==="Website"){
+  const issues=webIssues(b);
+  const gbp=gbpData(b);
+  const rF=rng(hash(b.n+"fresh"));
+  const freshPct=Math.round(55+rF()*40);
+  const stalePages=Math.round(1+rF()*6);
+  const highCount=issues.filter(x=>x[0]==="High").length;
+  const hoursIssue=issues.some(x=>x[1]==="Hours mismatch");
+  const sevPill=s=>s==="High"?'<span class="pill below">High</span>':s==="Med"?'<span class="pill at">Medium</span>':'<span class="pill info">Low</span>';
+  const hoursTable=state.mode==="admin"
+   ?`<table><thead><tr><th>Day</th><th>Open</th><th>Close</th><th>Closed</th></tr></thead><tbody>
+     ${gbp.hours.map((h,i)=>`<tr><td><strong>${h.d}</strong></td><td><input type="time" data-gbpo="${i}" value="${h.open}" ${h.closed?"disabled":""} aria-label="${h.d} opening time" style="border:1px solid var(--line);padding:5px;font-family:inherit;font-size:12px"></td><td><input type="time" data-gbpc="${i}" value="${h.close}" ${h.closed?"disabled":""} aria-label="${h.d} closing time" style="border:1px solid var(--line);padding:5px;font-family:inherit;font-size:12px"></td><td><input type="checkbox" data-gbpx="${i}" ${h.closed?"checked":""} aria-label="${h.d} closed"></td></tr>`).join("")}
+     </tbody></table>
+     <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:12px 0 4px">Holiday / special hours note</label>
+     <input id="gbpHoliday" value="${gbp.holiday.replace(/"/g,"&quot;")}" placeholder="e.g., July 4: open 12–6 · Labor Day: normal hours" style="width:100%;border:1px solid var(--line);padding:8px;font-family:inherit;font-size:12.5px">
+     <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+      <button id="gbpPublish" style="border:1px solid var(--steel);background:var(--navy);color:#fff;padding:9px 18px;font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:inherit">Publish to Google</button>
+      ${gbp.published?`<span class="pill above">Published ${gbp.published}</span>`:'<span class="sub2" style="font-size:11.5px;color:var(--muted)">Not yet published this session</span>'}
+     </div>
+     <div class="caption">Publishing updates the Google Business Profile via the API and flags the website footer for the same change — hours never drift apart. "Open at time of search" is a top-5 local ranking factor; holiday-hours gaps are the most common cause of lost calls.</div>`
+   :`<table><thead><tr><th>Day</th><th>Hours</th></tr></thead><tbody>
+     ${gbp.hours.map(h=>`<tr><td><strong>${h.d}</strong></td><td>${h.closed?"Closed":h.open+" – "+h.close}</td></tr>`).join("")}
+     </tbody></table><div class="caption">${gbp.published?"Last published "+gbp.published+" · ":""}Hours${gbp.holiday?" · "+gbp.holiday:""} are edited and published to Google in Admin view.</div>`;
+  body=`<div class="grid kpis">
+   ${kpi("Visits",fmt(d.web.sessions),delta(getD(d,"web")),"",null,null,true)}
+   ${kpi("Engaged visits",pct(d.web.engRate,0),delta(getD(d,"web")),pill(d.web.engRate,60,"Common GA4 engaged-rate guideline"),null,null,true)}
+   ${kpi("Actions completed",fmt(d.web.keyEvents),delta(getD(d,"web")),"",B.result+", forms, calls from the site",null,true)}
+   ${kpi("Visit-to-action rate",pct(d.conv.web),"",pill(d.conv.web,B.webConv,"Ruler Analytics 2026 industry conversion"),"Industry ≈ "+pct(B.webConv),null,true)}
+   ${kpi("Site performance",d.web.perfScore+"/100","",pill(d.web.perfScore,75,"Lighthouse passing threshold"),"Speed + engagement + conversion",null,true)}</div>
+   <div class="card" style="margin-top:14px"><h2 style="margin-top:0;font-size:15px">Visits are ${getD(d,"web")>=0?"growing":"soft"} — ${cmpLabel()}</h2><div class="chartbox"><canvas id="chChart"></canvas></div></div>
+   <h2>Top search words &amp; phrases <span class="note">what people typed into Google before landing here — from Search Console</span></h2>
+   <div class="card"><table><thead><tr><th>Search phrase</th><th>Clicks</th><th>Times seen</th><th>Click rate</th><th>Position</th><th>Trend</th></tr></thead><tbody>
+   ${searchTerms(b).web.map(x=>`<tr><td><strong>${x.q}</strong>${x.branded?' <span class="pill info">Our name</span>':""}</td><td>${fmt(x.clicks)}</td><td>${fmt(x.impr)}</td><td>${pct(x.ctr,1)}</td><td>${x.pos.toFixed(1)}</td><td class="${x.trend>5?"up":x.trend<-5?"down":"flat"}">${x.trend>0?"+":""}${x.trend.toFixed(0)}%</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption">Rising non-branded phrases are content assignments: a climbing phrase with a weak position wants a page built for it; strong position with a weak click rate wants a better title. Branded growth is the marketing scoreboard.</div></div>
+   <h2>Website health &amp; content freshness <span class="note">from the weekly crawl: links, dates, hours, events, schema, speed</span></h2>
+   <div class="grid kpis">
+    ${kpi("Open issues",issues.length,"",highCount?'<span class="pill below">'+highCount+' high</span>':'<span class="pill above">No high</span>',"Fix high-severity first",null,true)}
+    ${kpi("Broken links",issues.filter(x=>x[1].includes("Broken")).length,"","","Found by the weekly crawl",null,true)}
+    ${kpi("Content freshness",freshPct+"%","",pill(freshPct,75,"Share of key pages updated within 6 months"),stalePages+" cornerstone pages need a refresh",null,true)}
+    ${kpi("Hours in sync",hoursIssue?"No":"Yes","",hoursIssue?'<span class="pill below">Mismatch</span>':'<span class="pill above">Matched</span>',"Site footer vs Google Business Profile",null,true)}
+   </div>
+   <div class="card" style="margin-top:12px"><table><thead><tr><th>Severity</th><th>Issue</th><th>Where</th><th>Fix</th></tr></thead><tbody>
+   ${issues.map(x=>`<tr><td>${sevPill(x[0])}</td><td><strong>${x[1]}</strong></td><td class="sub2">${x[2]}</td><td class="sub2">${x[3]}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption">Sources in production: weekly site crawl (broken links, redirects), Lighthouse (speed), schema validator, a date parser that flags past events and stale "last updated" pages, and an hours cross-check against the Google Business Profile.</div></div>
+   <h2>Google Business Profile — hours &amp; updates <span class="note">${state.mode==="admin"?"edit and publish directly":"read-only — manage in Admin view"}</span></h2>
+   <div class="card">${hoursTable}</div>`;
+ }
+ if(ch==="Blog") body=`<div class="grid kpis">
+   ${kpi("Posts published",d.posts.blog,"","",null,null,true)}
+   ${kpi("Visits from Google",fmt(d.gsc.clicks*0.55),delta(getD(d,"gsc")),"",null,null,true)}
+   ${kpi("Time actually reading",(1.2+d.web.engRate/40).toFixed(1)+" min","","",null,null,true)}
+   ${kpi("Leads the blog assisted",fmt(d.web.keyEvents*0.3),delta(getD(d,"web")),"",null,null,true)}
+   ${kpi("AI answers citing our posts",d.aio.cited,"","","Guides & itineraries are what AI quotes",null,true)}
+   ${kpi("Refresh queue",Math.round(2+d.posts.blog/2)+" pages","","","Cornerstone pages older than 6 months — update first",null,true)}</div>
+   <p class="foot">Publishing volume is no longer the goal. Fresh, first-person content with original photos earns AI citations — Ahrefs found cited content measurably fresher than average.</p>`;
+ if(ch==="Search & AI") body=`<div class="grid kpis">
+   ${kpi("Clicks from Google",fmt(d.gsc.clicks),delta(getD(d,"gsc")),"",null,null,true)}
+   ${kpi("Times seen in Google",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Rising faster than clicks is the industry pattern",null,true)}
+   ${kpi("Click rate",pct(d.ctr.gsc),"",pill(d.ctr.gsc,2.8,"Position-blended organic CTR (First Page Sage)"),null,null,true)}
+   ${kpi("Average position",d.gsc.pos.toFixed(1),"","","Supporting diagnostic, not the headline",null,true)}
+   ${kpi("Branded searches",pct(d.gsc.branded,0),delta(getD(d,"gsc")),"","People searching our name = brand growth",null,true)}
+   ${kpi("AI share of voice",pct(d.aio.sov,1),"","","Needs live prompt tracking to be meaningful",null,true)}
+   ${kpi("AI answers citing us",d.aio.cited+" of 12","","","Cited ≈ +35% clicks vs not cited (Seer Interactive, 2025)",null,true)}
+   ${kpi("Visits from AI assistants",fmt(d.gsc.clicks*0.02),"","","GA4 'AI Assistant' channel (May 2026) — few but high-intent",null,true)}</div>
+   <div class="card" style="margin-top:14px"><h2 style="margin-top:0;font-size:15px">Seen vs clicked — the gap is the AI-search story</h2><div class="chartbox"><canvas id="chChart"></canvas></div>
+   <div class="caption">${b.seg==="realestate"?"Real estate is barely touched by AI Overviews so far (<3% of queries) — classic rankings and neighborhood pages still win here.":"Restaurants and hotels are heavily AI-exposed: AI engines source dining and lodging answers from Reddit, Google Maps, and OpenTable far more than from brand websites — which is why third-party presence is tracked under Local & Reviews."}</div></div>`;
+ if(ch==="Local & Reviews"){
+  const themesPos={dining:"food quality, water views, staff by name",hospitality:"views, cleanliness, staff warmth",realestate:"craftsmanship, communication",marine:"honest service, turnaround speed",retail:"staff picks, quality",portfolio:"staff, views, quality"}[b.seg];
+  const themesNeg={dining:"wait times on peak nights, parking",hospitality:"pool crowding, early checkout",realestate:"schedule slips",marine:"storage pricing",retail:"pricing",portfolio:"waits, pricing"}[b.seg];
+  const needResp=[["2 days ago","2★","“Waited 40 minutes past our reservation…”",true],["4 days ago","3★","“Great location, service was slow at the bar.”",false],["6 days ago","1★","“Charged incorrectly, still no reply.”",true]].slice(0,Math.max(1,Math.min(3,d.local.unanswered)));
+  body=`<div class="grid kpis">
+   ${kpi("Google rating",d.local.rating.toFixed(1)+"★",delta(getD(d,"local")),pill(d.local.rating,4.4,"Practitioner AI-discovery threshold (Pluspoint) — not a Google rule"),"Review-weighted",null,true)}
+   ${kpi("Unanswered negatives",d.local.unanswered,"",d.local.unanswered>2?'<span class="pill below">Act today</span>':"","Every negative review answered within 24h",null,true)}
+   ${kpi("Median response time",d.local.respHrs+"h","",pill(48-d.local.respHrs,24,"24h response SLA"),"Target: under 24 hours",null,true)}
+   ${kpi("New reviews, 30 days",d.local.vel30,delta(getD(d,"local")),"","Velocity beats total count for rankings",null,true)}
+   ${kpi("Review response rate",pct(d.local.respRate,0),"",pill(d.local.respRate,80,"Practitioner response-rate target"),null,null,true)}
+   ${kpi("Calls from profile",fmt(d.local.calls),delta(getD(d,"local")),"",null,null,true)}
+   ${kpi("Direction requests",fmt(d.local.directions),delta(getD(d,"local")),"",null,null,true)}
+   ${kpi("Third-party presence",Math.round(2+d.aio.cited)+" mentions","","","Reddit, TripAdvisor, best-of lists — where AI looks",null,true)}</div>
+   <h2>Reviews needing a response <span class="note">each review links to its reply screen; sentiment labels are human-correctable</span></h2>
+   <div class="card"><table><thead><tr><th>When</th><th>Rating</th><th>Excerpt</th><th>Priority</th><th>Action</th></tr></thead><tbody>
+   ${needResp.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td><td>${x[3]?'<span class="pill below">Escalate</span>':'<span class="pill at">Respond</span>'}</td><td class="sub2">Open in Google Business Profile → reply${x[3]?" + flag to manager":""}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption"><strong>Recurring themes</strong> — positive: ${themesPos}. Negative: ${themesNeg}. Themes are AI-labeled with confidence scores in production and can be corrected by a human — a generated label never silently becomes the reputation record.</div></div>
+   <p class="foot">Profile signals ≈ 32% of local ranking, reviews ≈ 20% (Whitespark 2026). Compliance: no staff review quotas, no employee-name requests (Google policy, April 2026); fake or incentivized reviews remain banned.</p>`;
+ }
+ let mn=null;
+ if(ch==="Mentions"){
+  mn=mentionData(b);
+  const srcs=mentionSources(b);
+  const mgr=state.mode==="admin"?`
+  <h2>Mention &amp; review sources <span class="note">these feed this tab and Local &amp; Reviews — they don't need their own tabs</span></h2>
+  <div class="card"><table><thead><tr><th>Track</th><th>Source</th><th>Specific URLs / pages</th></tr></thead><tbody>
+  ${srcs.map((s,i)=>`<tr><td><input type="checkbox" data-msrc="${i}" ${s.on?"checked":""} aria-label="Track ${s.n}"></td><td><strong>${s.n}</strong></td><td><input data-murl="${i}" value="${s.url.replace(/"/g,"&quot;")}" placeholder="${s.sug.replace(/"/g,"&quot;")}" aria-label="URLs for ${s.n}" style="width:100%;border:1px solid var(--line);padding:6px;font-family:inherit;font-size:12px"></td></tr>`).join("")}
+  </tbody></table><div class="caption">Suggestions are pre-filled per brand and region — replace with exact group, board, thread, or profile URLs. Employer-review sources (Glassdoor, Indeed) guard hiring reputation; enable them during hiring pushes.</div></div>`
+  :`<div class="caption" style="margin-top:12px"><strong>Tracking ${srcs.filter(x=>x.on).length} of ${srcs.length} available sources:</strong> ${srcs.filter(x=>x.on).map(x=>x.n).join(" · ")||"none"}. Sources and specific URLs (Facebook Groups, subreddits, local magazines, Nextdoor, Houzz, BBB, Glassdoor, Indeed…) are managed in Admin view.</div>`;
+  const sentPill=s=>s==="Positive"?'<span class="pill above">Positive</span>':s==="Negative"?'<span class="pill below">Negative</span>':'<span class="pill info">Neutral</span>';
+  body=`<div class="grid hero">
+   ${kpi("Mentions, 6 weeks",mn.total,"","","Across reviews, social, Reddit, and press",null,true)}
+   ${kpi("Positive",pct(mn.pos,0),"",pill(mn.pos,70,"Sentiment carries confidence scores in production"),"AI-labeled; human-correctable in production",null,true)}
+   ${kpi("Negative",pct(mn.neg,0),"","","Above ~10% needs a response plan",null,true)}
+   ${kpi("Top source",mn.enabled.length?mn.enabled[mn.weekly.map(w=>w.reduce((a,c)=>a+c,0)).indexOf(Math.max(...mn.weekly.map(w=>w.reduce((a,c)=>a+c,0))))]:"—","","","Where people talk about us most",null,true)}
+  </div>
+  <div class="card" style="margin-top:14px"><h2 style="margin-top:0;font-size:15px">Who's talking about us, and where <span class="note">weekly mentions by source, 6 weeks</span></h2><div class="chartbox"><canvas id="chChart"></canvas></div>
+  <div class="caption">Sources matter more than counts: AI engines build dining and lodging recommendations mostly from Reddit, Google Maps, and review platforms. Feeds: review APIs, Instagram/Facebook tags, F5Bot (free Reddit alerts), Brand24 or Ahrefs Brand Radar for press.</div></div>
+  <h2>Most recent mentions <span class="note">pulled from the configured sources below, with a link to each mention</span></h2>
+  <div class="card"><table><thead><tr><th>When</th><th>Source</th><th>What was said</th><th>Sentiment</th><th>Suggested move</th></tr></thead><tbody>
+  ${mn.recent.map(m=>`<tr><td style="white-space:nowrap">${m.ago===0?"Today":m.ago===1?"Yesterday":m.ago+" days ago"}</td><td><strong>${m.src}</strong></td><td>${m.text}</td><td>${sentPill(m.sent)}</td><td class="sub2">${m.sent==="Negative"?"Respond within 24h — acknowledge, take it offline":m.sent==="Positive"?(m.src==="Reddit"||m.src==="Press & Blogs"?"Amplify: quote it in social + save for AI-citation content":"Reply with thanks; ask permission to reshare"):"Answer the question — undecided customers read these"}</td></tr>`).join("")}
+  </tbody></table></div>${mgr}`;
+ }
+ el.innerHTML=`<div class="chtabs">${tabs.map(t=>`<button class="${t===ch?"active":""}" data-ch="${t}">${t}</button>`).join("")}</div>${body}${["Email","Local & Reviews","Mentions"].includes(ch)?"":contentTable}`;
+ destroyCharts();
+ if(ch==="Website") lineChart("chChart",P.labels,[{label:"Visits",data:d.trend.sessions.map(Math.round),borderColor:"#13416C"}]);
+ if(ch==="Search & AI") lineChart("chChart",P.labels,[{label:"Clicks",data:d.trend.gscClicks.map(Math.round),borderColor:"#13416C"},{label:"Times seen (÷10)",data:d.trend.gscImpr.map(v=>Math.round(v/10)),borderColor:"#6E8CAD"}]);
+ if(ch==="Mentions"&&mn&&mn.enabled.length){
+  barChart("chChart",["5 wks ago","4 wks ago","3 wks ago","2 wks ago","Last week","This week"],mn.enabled.map((s,i)=>({label:s,data:mn.weekly[i],backgroundColor:MENTION_COLORS[i%MENTION_COLORS.length]})),true);
+ }
+ if(ch==="Mentions"){
+  el.querySelectorAll("[data-msrc]").forEach(cb=>cb.onchange=()=>{mentionSources(b)[+cb.dataset.msrc].on=cb.checked;render()});
+  el.querySelectorAll("[data-murl]").forEach(inp=>inp.onchange=()=>{mentionSources(b)[+inp.dataset.murl].url=inp.value});
+ }
+ if(ch==="Website"&&state.mode==="admin"){
+  const g=gbpData(b);
+  el.querySelectorAll("[data-gbpo]").forEach(inp=>inp.onchange=()=>{g.hours[+inp.dataset.gbpo].open=inp.value});
+  el.querySelectorAll("[data-gbpc]").forEach(inp=>inp.onchange=()=>{g.hours[+inp.dataset.gbpc].close=inp.value});
+  el.querySelectorAll("[data-gbpx]").forEach(cb=>cb.onchange=()=>{g.hours[+cb.dataset.gbpx].closed=cb.checked;render()});
+  const hol=el.querySelector("#gbpHoliday");if(hol)hol.onchange=()=>{g.holiday=hol.value};
+  const pub=el.querySelector("#gbpPublish");if(pub)pub.onclick=()=>{g.published=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});render()};
+ }
+ el.querySelectorAll("[data-ch]").forEach(btn=>btn.onclick=()=>{state.channel=btn.dataset.ch;render()});
+}
+
+/* ---------- Competitors ---------- */
+function renderComp(b,d){
+ const el=document.getElementById("view-comp");
+ const set=COMPS[b.n];
+ if(b.n==="Portfolio Rollup"){
+  el.innerHTML=`<h2 style="margin-top:0">Competitor tracking across the portfolio</h2>
+  <div class="card"><p style="font-size:13px;line-height:1.6">Each brand tracks up to five named local competitors from public data — no competitor logins needed. Select a brand to see its set. Sources: Instagram Competitive Insights (free), Metricool free tier, Meta Ad Library, Google Ads Auction Insights, Google Trends share of search, Google Maps review tracking.</p></div>
+  <h2>Coverage</h2><div class="card"><table><thead><tr><th>Brand</th><th>Competitors tracked</th></tr></thead><tbody>
+  ${Object.entries(COMPS).map(([k,v])=>`<tr><td><strong>${k}</strong></td><td>${v.join(" · ")}</td></tr>`).join("")}
+  <tr><td><strong>Little Blue · South Peak Coffee Cart · The Shop at South Peak</strong></td><td><em>Competitor sets to be confirmed with the team</em></td></tr>
+  </tbody></table></div>`;
+  destroyCharts();return;
+ }
+ if(!set){
+  el.innerHTML=`<div class="card"><h2 style="margin-top:0">Competitor set not yet defined for ${b.n}</h2><p style="font-size:13px;line-height:1.6">A small, hyper-local category — candidates exist but weren't verified. Confirm 3–5 names with the on-site team, then add them to Instagram Competitive Insights (free) and Metricool (free tier tracks 5).</p></div>`;
+  destroyCharts();return;
+ }
+ const B=BENCH[b.seg];
+ const rows=set.map(c=>{
+  const r=rng(hash(c));const mult=(lo,hi)=>lo+r()*(hi-lo);
+  return {n:c,ig:Math.round(d.followers.ig*mult(.3,2.4)),gr:mult(-1,6),pw:mult(1,6),er:B.igER*mult(.4,2.2),rating:mult(3.8,4.8),vel:Math.round(mult(1,24)),ads:Math.round(mult(0,9))};
+ });
+ const us={n:b.n+" (us)",ig:d.followers.ig,gr:getD(d,"ig")/3,pw:d.posts.ig/Math.max(1,period().days/7),er:d.er.ig,rating:d.local.rating,vel:d.local.vel30,ads:3};
+ const all=[us,...rows];
+ const med=a=>{const s=[...a].sort((x,y)=>x-y);return s[Math.floor(s.length/2)]};
+ const medPw=med(rows.map(r=>r.pw)),medEr=med(rows.map(r=>r.er)),medVel=med(rows.map(r=>r.vel));
+ const gaps=[];
+ if(us.pw===0)gaps.push("no posts in this window — cadence comparison needs a 7-day or longer range");
+ else if(us.pw<medPw*0.8)gaps.push(`competitors post ${(medPw/us.pw).toFixed(1)}x more often — frequency is the gap, not quality`);
+ if(us.er>medEr)gaps.push("our engagement rate beats the competitive median — content quality is a strength");
+ if(us.vel<medVel)gaps.push(`competitors collect reviews faster (${medVel} vs our ${us.vel} per 30 days) — start the ask-for-review push`);
+ if(!gaps.length)gaps.push("we lead or match the set on posting, engagement, and reviews — protect the lead");
+ el.innerHTML=`
+  <div class="tldr"><b>Competitive read:</b> ${gaps.join("; ")}.</div>
+  <h2 style="margin-top:0">${b.n} vs its market <span class="note">public data only · updated monthly</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Business</th><th>Instagram followers</th><th>Growth / month</th><th>Posts / week</th><th>Engagement</th><th>Google rating</th><th>New reviews / 30d</th><th>Active Meta ads</th></tr></thead><tbody>
+  ${all.map((r,i)=>`<tr class="${i===0?"hl":""}"><td>${r.n}</td><td>${fmt(r.ig)}</td><td class="${r.gr>0?"up":"down"}">${r.gr>0?"+":""}${r.gr.toFixed(1)}%</td><td>${r.pw.toFixed(1)}</td><td>${pct(r.er)}</td><td>${r.rating.toFixed(1)}★</td><td>${r.vel}</td><td>${r.ads}</td></tr>`).join("")}
+  </tbody></table>
+  <div class="caption">Sources: Instagram Competitive Insights + Metricool (followers, posting, engagement on public posts) · Google Maps (ratings, review velocity) · Meta Ad Library (active ad count — creative themes viewable, spend is not public). Google Ads Auction Insights adds "who outbids us" in Paid Campaigns.</div></div>
+  <h2>What their ads are saying <span class="note">Meta Ad Library — logged monthly</span></h2>
+  <div class="card"><table><thead><tr><th>Competitor</th><th>Active ads</th><th>Running since</th><th>Themes — long-running ads are likely working</th></tr></thead><tbody>
+  ${rows.slice(0,3).map((r,i)=>`<tr><td>${r.n}</td><td>${r.ads}</td><td>${["May 2026","Mar 2026","Jun 2026"][i]}</td><td>${["Seasonal offer + booking link","Event/wedding showcase","Locals discount, weekday push"][i]}</td></tr>`).join("")}
+  </tbody></table></div>`;
+ destroyCharts();
+}
+
+/* ---------- Paid: per-objective economics, no blended CPR ---------- */
+function renderPaid(b,d){
+ const el=document.getElementById("view-paid");
+ const cams=campaigns(b);
+ const totSpend=cams.reduce((a,c)=>a+c.spent,0);
+ const totBudget=cams.reduce((a,c)=>a+c.budget,0);
+ /* group by objective — a lead, a booking, and a purchase never share a blended cost */
+ const byObj={};
+ cams.forEach(c=>{if(!byObj[c.obj])byObj[c.obj]={spend:0,results:0,unit:c.unit};byObj[c.obj].spend+=c.spent;byObj[c.obj].results+=c.results});
+ const objCards=Object.entries(byObj).filter(([o])=>o!=="Awareness").slice(0,2).map(([o,v])=>
+  kpi("Cost per "+v.unit.replace(/s$/,""),"$"+(v.spend/Math.max(1,v.results)).toFixed(0),"","",fmt(v.results)+" "+v.unit+" · $"+fmt(v.spend)+" spend · "+o+" campaigns only",null,true)).join("");
+ const aw=byObj["Awareness"];
+ const rows=cams.map(c=>{
+  const spentPct=c.spent/c.budget*100, elPct=c.elapsed/c.flightDays*100;
+  const pace=elPct>0?spentPct/elPct:1;
+  const paceCls=Math.abs(pace-1)<=0.05?"above":Math.abs(pace-1)<=0.15?"at":"below";
+  const paceLbl=Math.abs(pace-1)<=0.05?"On pace":pace>1?"Overpacing":"Underpacing";
+  const flags=[`<span class="pill ${paceCls}">${paceLbl} ${(pace*100).toFixed(0)}%</span>`];
+  if(c.freq>=3.5)flags.push(`<span class="pill below">Creative tired · seen ${c.freq.toFixed(1)}x</span>`);
+  else if(c.freq>=2.5)flags.push(`<span class="pill at">Fatigue watch · ${c.freq.toFixed(1)}x</span>`);
+  if(c.daysLeft>0&&c.daysLeft<=7)flags.push(`<span class="pill info">Ends in ${c.daysLeft}d</span>`);
+  const proj=c.daysLeft>0?c.spent+(c.spent/Math.max(1,c.elapsed))*c.daysLeft:c.spent;
+  return `<tr>
+   <td style="font-family:ui-monospace,monospace;font-size:11px">${c.name}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.plat} · ${c.status}</div></td>
+   <td>${c.obj}</td>
+   <td>${c.flightDays}d · ${c.daysLeft>0?c.daysLeft+"d left":"done"}</td>
+   <td>$${fmt(c.budget)}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.lifetime?"lifetime":"daily-equivalent"}</div></td>
+   <td>$${fmt(c.spent)}<div class="sub2" style="font-size:10.5px;color:var(--muted)">projected $${fmt(proj)}</div></td>
+   <td><strong>${c.obj==="Awareness"?fmt(c.results)+" reached":c.results+" "+c.unit}</strong>${c.roas?`<div class="sub2" style="font-size:10.5px;color:var(--muted)">${c.roas.toFixed(1)}x return</div>`:""}</td>
+   <td>${c.obj==="Awareness"?"—":"$"+c.cpr.toFixed(0)}</td>
+   <td>${pct(c.ctr,1)}</td>
+   <td>${flags.join(" ")}</td></tr>`;
+ }).join("");
+ el.innerHTML=`
+  <div class="grid hero">
+   ${kpi("Spend this period","$"+fmt(totSpend),delta(getD(d,"paid")),"","of $"+fmt(totBudget)+" budgeted",null,true)}
+   ${objCards}
+   ${aw?kpi("Awareness — separate","$"+fmt(aw.spend),"","",fmt(aw.results)+" reached · never blended with performance costs",null,true):""}
+   ${kpi("Needs attention",cams.filter(c=>{const p=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(p-1)>0.15||c.freq>=3.5}).length,"","","Pacing off ±15% or creative fatigued",null,true)}
+  </div>
+  <div class="caption" style="margin-top:6px">Costs are reported per objective only — a lead, a booking, and a purchase never share a "blended" cost, and awareness spend is shown separately with reach.</div>
+  <h2>Campaigns <span class="note">results speak each campaign's language — leads, bookings, calls — never generic "conversions"</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Campaign</th><th>Goal</th><th>Flight</th><th>Budget</th><th>Spent</th><th>Results</th><th>Cost / result</th><th>Click rate</th><th>Health</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="caption"><strong>Pacing</strong> = share of budget spent ÷ share of flight elapsed; on pace ±5%, watch 5–15%, act beyond 15% — underspend flagged too. Google can spend 2x a daily budget in one day but never over 30.4x per month — pace monthly. Meta averages daily budgets across the week. <strong>Creative fatigue:</strong> at ~3.5 exposures clicks fade (Meta research: conversion likelihood drops ~45% by the 4th view). <strong>Attribution:</strong> Meta (7-day click/1-day view) and GA4 (data-driven) use different rulers; 10–20% variance is structural — never sum across platforms.</div></div>`;
+ destroyCharts();
+}
+
+/* ---------- Revenue Centers ---------- */
+function renderRev(b,d){
+ const el=document.getElementById("view-rev");
+ const rv=revData(b);
+ const grow=rv.rows.filter(x=>x.status==="grow"),under=rv.rows.filter(x=>x.status==="under");
+ const topOpp=[...rv.rows].sort((a,c)=>c.gap-a.gap)[0];
+ const statusPill=s=>s==="grow"?'<span class="pill above">Growth opportunity</span>':s==="under"?'<span class="pill below">Underperforming</span>':'<span class="pill info">Healthy</span>';
+ const rec=x=>x.status==="grow"?`Demand outruns sales (+${x.gap} gap) — check pricing, packaging, and booking friction; feature on the money pages`
+  :x.status==="under"?(x.yoy<0?`Sales down ${Math.abs(x.yoy).toFixed(0)}% with demand at ${x.D}/100 — ${x.D>50?"demand exists; fix the offer or visibility":"rebuild demand: content + keywords first"}`:`Sales coasting while demand thins (gap ${x.gap}) — leading indicator of decline`)
+  :"Demand and revenue moving together";
+ const sigBar=x=>`<div class="sub2" style="font-size:10.5px;color:var(--muted)">search ${Math.round(x.sig.search)} · web ${Math.round(x.sig.web)} · reviews ${Math.round(x.sig.reviews)} · content ${Math.round(x.sig.content)} · tags ${Math.round(x.sig.tags)}</div>`;
+ const adminPanel=state.mode==="admin"?`
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Admin — revenue centers</h2>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${rv.toast?"This brand maps to Toast revenue centers — sales flow in live once connected.":"No POS feed; sales import monthly from accounting."} Edits here are session-only in the prototype; production stores them with permissions and an audit trail.</p>
+    <ul style="list-style:none">${rv.rows.map((x,i)=>`<li style="padding:6px 0;border-bottom:1px solid #eef1f4;font-size:13px">${x.c} <button data-rmc="${i}" style="float:right;border:none;background:none;color:var(--bad);cursor:pointer;font-size:14px" title="Remove ${x.c}" aria-label="Remove ${x.c}">×</button></li>`).join("")}</ul>
+    <div style="margin-top:10px;display:flex;gap:6px"><input id="newCenter" aria-label="New revenue center name" placeholder="Add a revenue center" style="flex:1;border:1px solid var(--line);padding:8px;font-family:inherit;font-size:12.5px"><button id="addCenter" style="border:1px solid var(--steel);background:#fff;color:var(--navy);padding:8px 14px;font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:inherit">Add</button></div>
+    <h3 style="font-size:11px;letter-spacing:2px;text-transform:uppercase;margin:18px 0 8px;font-family:'Nord-Book','Jost',sans-serif;font-weight:700">Monthly P&amp;L import</h3>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.55">Status: <span class="pill at">Awaiting first upload</span> — each company's monthly P&amp;L (CSV or accounting export) is uploaded here. Expected columns: <code style="font-size:11px">period, revenue_center, revenue, cogs, labor</code>. Lines map to the centers above; unmapped lines are flagged for review, never silently dropped. Imports replace estimated revenue with actuals and refresh the Revenue Index monthly.</p>
+   </div>`
+  :`<div class="card"><h2 style="margin-top:0;font-size:15px">About this view</h2><p style="font-size:12.8px;line-height:1.6">${rv.toast?"Sales flow live from Toast by revenue center once connected.":"This brand has no POS feed; sales import monthly from accounting."} Center definitions and monthly P&amp;L imports are managed in Admin view — switch modes in the header. Monthly P&amp;L uploads replace estimates with actuals for every brand. Every score below carries its five demand signals so a flag is never a black box.</p></div>`;
+ el.innerHTML=`
+  <div class="tldr"><b>${b.n==="Portfolio Rollup"?"Portfolio":b.n}:</b> $${fmt(rv.totMtd)} month to date across ${rv.rows.length} revenue centers.
+  ${grow.length?`<b>Biggest opening:</b> ${topOpp.c} — demand index ${topOpp.D} vs revenue index ${topOpp.R}; people are searching and talking about it more than they're buying it.`:"Demand and revenue are broadly aligned."}
+  ${under.length?` <b>Flagged:</b> ${under.map(x=>x.c).join(", ")} underperforming.`:""}</div>
+  <div class="grid hero">
+   ${kpi("Sales today",rv.toast?"$"+fmt(rv.today):"—","","",rv.toast?"Live from Toast, by revenue center":"No POS feed — monthly accounting import",null,true,rv.toast?null:"unavailable")}
+   ${kpi("Month to date","$"+fmt(rv.totMtd),delta(getD(d,"paid")),"","All centers",null,true)}
+   ${kpi("Growth opportunities",grow.length,"","","Demand index ≥ 15 points above revenue index",null,true)}
+   ${kpi("Underperforming",under.length,"","","Declining sales, or demand thinning under steady sales",null,true)}
+  </div>
+  <div class="grid two" style="margin-top:14px">
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Demand vs revenue, same 0–100 scale — the gap is the opportunity</h2><div class="chartbox"><canvas id="revChart"></canvas></div>
+   <div class="caption">Both bars share one index scale, so they compare honestly. Navy: Revenue Index (share rank 60% + year-over-year growth 40%). Steel: Demand Index (search 25% + web 25% + review mentions 20% + content 15% + hashtags 15%). A steel bar towering over navy = money left on the table; navy over steel = sales coasting on momentum.</div></div>
+   ${adminPanel}
+  </div>
+  ${(()=>{const sugg=revSuggestions(b);return sugg.length?`
+  <h2>AI-recommended revenue centers to consider <span class="note">not yet tracked — analyzed from demand signals, review themes, and portfolio synergies</span></h2>
+  <div class="card"><table><thead><tr><th>Suggested center</th><th>Why this business, why now</th><th>Next step</th></tr></thead><tbody>
+  ${sugg.map(([nm,why])=>`<tr><td><strong>${nm}</strong></td><td class="sub2">${why}</td><td class="sub2">Add in Admin view · track demand for one quarter before committing capital</td></tr>`).join("")}
+  </tbody></table></div>`:""})()}
+  <h2>Revenue center detail <span class="note">Opportunity Gap = Demand Index − Revenue Index · full formula in spec §8</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Center</th><th>Today</th><th>Month to date</th><th>vs last year</th><th>Share</th><th>Demand index</th><th>Revenue index</th><th>Gap</th><th>Status &amp; recommended move</th></tr></thead><tbody>
+  ${rv.rows.map(x=>`<tr><td><strong>${x.c}</strong></td><td>${rv.toast?"$"+fmt(x.today):"—"}</td><td>$${fmt(x.mtd)}</td><td class="${x.yoy>0?"up":"down"}">${x.yoy>0?"+":""}${x.yoy.toFixed(0)}%</td><td>${x.share.toFixed(0)}%</td><td><strong>${x.D}</strong>${sigBar(x)}</td><td>${x.R}</td><td class="${x.gap>=15?"up":x.gap<=-15?"down":"flat"}">${x.gap>0?"+":""}${x.gap}</td><td>${statusPill(x.status)}<div class="sub2" style="margin-top:4px">${rec(x)}</div></td></tr>`).join("")}
+  </tbody></table></div>`;
+ destroyCharts();
+ barChart("revChart",rv.rows.map(x=>x.c),[
+  {label:"Revenue index (0–100)",data:rv.rows.map(x=>x.R),backgroundColor:"#13416C"},
+  {label:"Demand index (0–100)",data:rv.rows.map(x=>x.D),backgroundColor:"#6E8CAD"}
+ ]);
+ if(state.mode==="admin"){
+  el.querySelectorAll("[data-rmc]").forEach(btn=>btn.onclick=()=>{revCenters(b).splice(+btn.dataset.rmc,1);render()});
+  const add=()=>{const v=el.querySelector("#newCenter").value.trim();if(v){revCenters(b).push(v);render()}};
+  el.querySelector("#addCenter").onclick=add;
+  el.querySelector("#newCenter").onkeydown=e=>{if(e.key==="Enter")add()};
+ }
+}
+
+/* ---------- Demographics ---------- */
+function renderDemo(b,d){
+ const el=document.getElementById("view-demo");
+ const dm=demoData(b);
+ const topAge=[...dm.ages].sort((a,c)=>c[1]-a[1])[0];
+ const topGeo=dm.geo[0];
+ el.innerHTML=`
+  <div class="tldr"><b>Who we're reaching:</b> the core audience is <b>${topAge[0]}</b> (${topAge[1].toFixed(0)}% of engaged audience), ${dm.female.toFixed(0)}% female, led by <b>${topGeo[0]}</b> (${topGeo[1].toFixed(0)}%).
+  The email list skews about ${dm.emailOlder.toFixed(0)} points older than social — two different audiences, two content tracks. ${dm.mobile>70?"Mobile dominates: design every page and email for a phone first.":""}</div>
+  <div class="grid hero">
+   ${kpi("Core age group",topAge[0],"","",topAge[1].toFixed(0)+"% of engaged audience",null,true)}
+   ${kpi("Gender split",dm.female.toFixed(0)+"% / "+(100-dm.female).toFixed(0)+"%","","","Female / male, engaged audience",null,true)}
+   ${kpi("Top home market",topGeo[0].split(",")[0],"","",topGeo[1].toFixed(0)+"% of visitors",null,true)}
+   ${kpi("New vs returning",dm.newPct.toFixed(0)+"% new","","","Website visitors this period",null,true)}
+  </div>
+  <div class="grid two" style="margin-top:14px">
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Age mix — social audience vs email list</h2><div class="chartbox"><canvas id="demoChart"></canvas></div>
+   <div class="caption">Social skews younger; the email list skews older. Practical read: Reels and TikTok carry discovery for under-45s, while email drives repeat visits from the 55+ group — plan content for both, not an average of neither.</div></div>
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Where our audience lives</h2>
+   <table><thead><tr><th>Market</th><th>Share of visitors</th><th>So what</th></tr></thead><tbody>
+   ${dm.geo.map((g,i)=>`<tr><td><strong>${g[0]}</strong></td><td>${g[1].toFixed(0)}%</td><td>${i===0?"Primary drive market — geo-target paid here first":i===1?"Secondary market — weekend/seasonal messaging":i===dm.geo.length-1?"Locals — weekday offers and community content":"Emerging — watch before investing"}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption">Device mix: ${dm.mobile.toFixed(0)}% mobile. Sources: Meta audience insights, GA4 demographics &amp; geography (Google Signals), email list geography, TikTok analytics${TOAST_BRANDS.test(b.n)?", Toast order geography":""}. All aggregate and platform-reported — no individual data stored.</div></div>
+  </div>`;
+ destroyCharts();
+ const emailAges=dm.ages.map(([k,v],i)=>Math.max(1,v+(i<2?-dm.emailOlder/2:i>3?dm.emailOlder/2:0)));
+ barChart("demoChart",dm.ages.map(a=>a[0]),[
+  {label:"Social & web audience %",data:dm.ages.map(a=>+a[1].toFixed(1)),backgroundColor:"#13416C"},
+  {label:"Email list %",data:emailAges.map(v=>+v.toFixed(1)),backgroundColor:"#6E8CAD"}
+ ]);
+}
+
+/* ---------- AI benchmark analysis: shown only where the gap makes a difference ---------- */
+function benchGaps(b,d){
+ const B=BENCH[b.seg];
+ const FIX={
+  "Instagram engagement":"Shift to people-on-camera Reels and carousels; lead with the first 3 seconds",
+  "TikTok engagement":"Post native, unpolished; ride local sounds; completion beats production value",
+  "Facebook engagement":"Events, community posts, and shares — not link dumps",
+  "Email click rate":"Resegment the list, clean inactives, one clear CTA per send",
+  "Site conversion":"Audit the booking/inquiry path on a phone — every extra tap costs",
+  "YouTube thumbnail CTR":"Redesign thumbnails: faces, contrast, three words max",
+  "Avg % of video watched":"Front-load the payoff in the first 20 seconds; cut cold opens",
+  "Review response rate":"24-hour reply SLA; templates for the team, personal openers"
+ };
+ const cand=[
+  ["Instagram engagement",d.er.ig,B.igER,"Rival IQ 2026 per-follower median","Instagram is the discovery channel for local hospitality"],
+  ["TikTok engagement",d.er.tt,B.ttER,"Rival IQ 2026 per-follower median","TikTok reaches the under-35 visitor"],
+  ["Facebook engagement",d.er.fb,B.fbER,"Rival IQ 2026 per-follower median","Facebook still drives events and 45+ locals"],
+  ["Email click rate",d.ctr.email,B.emailClick,"MailerLite 2025 industry benchmark","Email is the highest-ROI owned channel"],
+  ["Site conversion",d.conv.web,B.webConv,"Ruler Analytics 2026 industry rate","Converts demand already paid for — cheapest growth there is"],
+  ["YouTube thumbnail CTR",d.ctr.yt,3.5,"Platform average (Humble & Brag 2026)","Decides whether videos get distributed at all"],
+  ["Avg % of video watched",d.watch.ytPct,23.7,"Retention Rabbit 2025 average","Retention drives algorithmic reach"],
+  ["Review response rate",d.local.respRate,80,"Practitioner target","Feeds local ranking and guest trust"]
+ ];
+ return cand.map(([m,us,bn,src,why])=>({m,us,bn,src,why,gap:(us/bn-1)*100,fix:FIX[m]}))
+  .filter(x=>Math.abs(x.gap)>=15)
+  .sort((a,c)=>Math.abs(c.gap)-Math.abs(a.gap)).slice(0,6);
+}
+
+/* ---------- AI-recommended revenue centers per business ---------- */
+const REVC_SUGGEST={
+"Flying Bridge Marina":[["Charters & Boat Rentals","'boat rental Falmouth' search demand peaks Jun–Aug and none of the current five centers captures it"],["Detailing & Valet","high-margin add-on sold into existing service relationships"],["Dockside Events","the waterfront is already drawing crowds to the restaurant next door"]],
+"Flying Bridge Restaurant":[["Private Events & Buyouts","the harbor view is the most-mentioned review theme — sell it as a venue"],["Raw Bar Catering","Cape catering searches peak Jun–Sep; competitors without a raw bar can't follow"],["Gift Cards & Merch","cushions the shoulder season and travels home with tourists"]],
+"South Peak Resort":[["Seasonal Rental Program","owners' homes sit idle midweek; rental demand signals outrun current supply"],["Homeowner Concierge","recurring revenue from an audience already acquired"],["Corporate Retreats","midweek off-peak capacity matches corporate demand"]],
+"Harbor Lights":[["Winter Boat Storage","the marina asset earns nothing December–March today"],["Golf Memberships & Leagues","league play stabilizes weekday revenue"],["Off-season Corporate Events","the ballroom's midweek winter calendar is the gap"]],
+"Basecamp Brewing":[["Beer Club / Subscriptions","recurring revenue from the most loyal segment"],["Brewery Tours & Tastings","tour searches rise with Lincoln's summer traffic"],["Wholesale & Self-Distribution","taps in sibling venues first — zero acquisition cost"]],
+"Longfellow Design Build":[["Home Care & Maintenance Plans","recurring revenue from every completed build"],["Design-Only Consultations","captures leads not ready for full design-build"],["Furniture & Finish Packages","cross-sell with Mountain Furniture Co. — the portfolio already owns the supplier"]]
+};
+const REVC_SUGGEST_SEG={
+ dining:[["Catering","extends the kitchen beyond seats without new rent"],["Gift Cards & Merch","shoulder-season cushion; tourists carry the brand home"],["Ticketed Events & Classes","tastings and classes monetize slow nights"]],
+ hospitality:[["Packages & Itineraries","cross-brand bundles convert shared audiences"],["Gift Cards","captures intent before dates are chosen"],["Off-season Corporate Retreats","midweek and shoulder-season capacity matches corporate demand"]],
+ realestate:[["Maintenance & Care Plans","recurring revenue from past clients"],["Design Consultations","monetizes leads not ready to build"],["Furniture Packages","cross-sell with Mountain Furniture Co."]],
+ marine:[["Charters & Rentals","summer demand outruns owned-boat supply"],["Detailing & Valet","high-margin add-on to service relationships"],["Winterization Packages","locks fall revenue in July"]],
+ retail:[["Online Store","the audience already follows from home"],["Corporate & Group Gifting","one buyer, many units"],["Gear Rentals","visitors need gear for a weekend, not a lifetime"]],
+ portfolio:[["Cross-brand Packages","itineraries spanning dining, stay, and activities"],["Portfolio Gift Card","one card, every brand"],["Shared Events Calendar","one calendar sells every venue's slow nights"]]
+};
+function revSuggestions(b){
+ const existing=revCenters(b).map(x=>x.toLowerCase());
+ const list=(REVC_SUGGEST[b.n]||REVC_SUGGEST_SEG[b.seg]||[]);
+ return list.filter(([name])=>!existing.some(e=>e.includes(name.toLowerCase().split(" ")[0])));
+}
+
+/* ---------- AI content plan: strategic + timely, per company ---------- */
+function contentPlan(b){
+ const nh=/South Peak|Timber Wood|Basecamp|Snowfish|Bluebird|Mills|Mountain|Coffee|Shop|Whale|Alpine/.test(b.n);
+ const n=b.n==="Portfolio Rollup"?"each brand":b.n;
+ if(b.seg==="dining"&&nh)return{
+  blog:[{t:"Après-hike eats in Lincoln: the July guide",why:"summer hiker traffic is peaking on the Kanc right now; 'restaurants near Loon' searches follow",due:"by Jul 20"},{t:"Book your fall event now: leaf-peeper season fills first",why:"foliage searches start rising late July — publishing now catches the planning window",due:"by Jul 31"}],
+  yt:[{t:"60 seconds: from keg to glass (or kitchen to table)",why:"process videos are this segment's strongest retention format",due:"this week"},{t:"Meet the crew: 3 staff picks for summer",why:"people-on-camera earns 2–3x engagement across the portfolio",due:"by Jul 25"}],
+  social:[{t:"Trail-to-table Reels, 2x/week",why:"pairs the region's #1 activity with dinner — high share rate",due:"ongoing"},{t:"Carousel: 5 dishes of the week",why:"carousels out-engage Reels in most industries (Rival IQ 2025)",due:"weekly"},{t:"Stories: 'rainy day in Lincoln?' indoor playbook",why:"weather-triggered — armed for the next wet weekend",due:"triggered"}]};
+ if(b.seg==="dining")return{
+  blog:[{t:"The July harbor guide: eat, watch, and do around "+n,why:"peak Cape season traffic is now; itinerary pages are what AI answers cite",due:"by Jul 18"},{t:"Behind the raw bar: how we source on Cape Cod",why:"first-person sourcing stories with a named author earn E-E-A-T and citations",due:"by Jul 31"}],
+  yt:[{t:"Golden hour on the harbor: 45-second table view",why:"the view is the most-mentioned review theme — show it",due:"this week"},{t:"One dish, start to finish",why:"process + person on camera: the winning combo here",due:"by Jul 25"}],
+  social:[{t:"Patio golden-hour Reels, 3x/week",why:"sunset content peaks with tourist planning hours (6–9pm scroll)",due:"ongoing"},{t:"Carousel: what locals order",why:"answer-format content for the 'where should we eat' question",due:"weekly"},{t:"Stories poll: butter or mayo?",why:"replies and sticker taps are the Stories signals that matter",due:"this week"}]};
+ if(b.seg==="hospitality"&&nh)return{
+  blog:[{t:"Foliage at Loon: why September books out by August",why:"'NH foliage' searches begin climbing late July — the 25–30% trends threshold says start now",due:"by Jul 28"},{t:"Summer on South Peak: construction update + what's next",why:"transparency content converts real-estate watchers into inquiries",due:"by Jul 22"}],
+  yt:[{t:"Drone series: sunrise over the Pemi, part 2",why:"the format already leads this brand's watch time",due:"this week"},{t:"48 hours in Lincoln: the itinerary film",why:"itineraries earn AI citations and cross-sell sibling brands",due:"by Aug 1"}],
+  social:[{t:"Guest-photo carousel, weekly",why:"UGC carousels are this brand’s top engagement format",due:"weekly"},{t:"Reel: room-to-view in 22 seconds",why:"short walkthroughs hold attention past the 3-second gate",due:"by Jul 25"},{t:"Stories countdown: summer events series",why:"mid-sequence reach peaks at frames 6–13 — run full sequences",due:"ongoing"}]};
+ if(b.seg==="hospitality")return{
+  blog:[{t:"A perfect 48 hours in Falmouth: stay, eat, boat",why:"cross-brand itinerary — the format AI engines cite for 'where to stay' questions",due:"by Jul 18"},{t:"September on the water: why locals call it the best month",why:"extends the booking window past Labor Day — publish before August planning",due:"by Jul 31"}],
+  yt:[{t:"Room-to-view walkthroughs, one per room type",why:"answer the #1 pre-booking question visually",due:"by Aug 1"},{t:"One-minute harbor: what guests wake up to",why:"sensory content drives saves — the intent signal",due:"this week"}],
+  social:[{t:"Guest-photo carousel, weekly",why:"UGC out-engages brand photography here",due:"weekly"},{t:"Sunset Reel from the private beach, 2x/week",why:"peak-season golden hour is the brand's best asset",due:"ongoing"},{t:"Stories: 'ferry or day trip?' local answers",why:"answers the questions undecided bookers actually ask",due:"this week"}]};
+ if(b.seg==="realestate")return{
+  blog:[{t:"One build decision, explained: window walls in New England",why:"decision-explainer posts earn shares in design groups and AI citations",due:"by Jul 25"},{t:"Why July is when fall remodels get scheduled",why:"timely urgency for the strongest lead season",due:"by Jul 20"}],
+  yt:[{t:"Site walk: framing to finished in 90 seconds",why:"time-lapse builds are the segment's strongest format",due:"by Jul 28"},{t:"Designer explains one smart detail, ep. 3",why:"named experts on camera build E-E-A-T and trust",due:"by Aug 1"}],
+  social:[{t:"Before/after carousel series, weekly",why:"the highest-engagement real-estate format, period",due:"weekly"},{t:"Reel: client walkthrough reaction",why:"emotion on camera outperforms property beauty shots",due:"by Jul 30"},{t:"Stories: selection-day series with a client",why:"process transparency pre-answers objections",due:"ongoing"}]};
+ if(b.seg==="marine")return{
+  blog:[{t:"The mid-season engine checklist (10 minutes, 5 checks)",why:"peak boating season = peak service searches",due:"by Jul 20"},{t:"Slip vs mooring on Falmouth Harbor: honest math",why:"comparison content wins the 'slips near me' AI answers",due:"by Jul 31"}],
+  yt:[{t:"Repower time-lapse: old outboard to new in 60s",why:"the format already leads this brand's engagement",due:"this week"},{t:"Dockside walkthrough: 3 boats ready now",why:"inventory content converts directly",due:"weekly"}],
+  social:[{t:"Launch-day customer photos, ongoing",why:"owner pride is free UGC with built-in reach",due:"ongoing"},{t:"Sunset Friday dock Reel",why:"weekly ritual content builds habitual viewership",due:"weekly"},{t:"Stories: service bay Saturday",why:"behind-the-scenes trust content for a trust business",due:"weekly"}]};
+ if(b.seg==="retail")return{
+  blog:[{t:"What to pack for a Loon summer weekend",why:"answer-format content for the exact question visitors search",due:"by Jul 22"},{t:"Fall preview: the first flannel drop",why:"early-bird seasonal content catches pre-trip shopping",due:"by Aug 5"}],
+  yt:[{t:"Fit check: 4 looks for the mountain",why:"short-form product-on-person beats flat lays",due:"by Jul 28"}],
+  social:[{t:"Staff picks carousel tied to the weekend forecast",why:"weather-matched product content converts",due:"weekly"},{t:"Unboxing Reel: new arrivals",why:"novelty + anticipation drives saves",due:"per drop"},{t:"Stories poll: which colorway?",why:"engagement that doubles as merchandising research",due:"per drop"}]};
+ return{
+  blog:[{t:"'One perfect day' itineraries, one per region",why:"cross-brand content only this portfolio can publish — AI-citable and cross-selling",due:"one per month"},{t:"Foliage-season master guide (NH) + September-on-the-water (Cape)",why:"both search curves start rising late July",due:"by Jul 31"}],
+  yt:[{t:"Portfolio drone series: one property per week",why:"consistent format, compounding subscribers",due:"weekly"},{t:"Meet the makers: staff across the brands",why:"people-on-camera wins in every segment",due:"biweekly"}],
+  social:[{t:"Cross-brand guest-photo carousel",why:"UGC at portfolio scale no single competitor can match",due:"weekly"},{t:"Weather-triggered playbooks armed for every region",why:"snow, sun, and rain triggers ready per brand",due:"triggered"},{t:"Shared events calendar content",why:"every venue's slow night is another venue's audience",due:"ongoing"}]};
+}
+
+/* ---------- Insights & Advice ---------- */
+function renderAI(b,d){
+ const el=document.getElementById("view-ai");
+ const name=b.n==="Portfolio Rollup"?"portfolio":b.n;
+ const B=BENCH[b.seg];
+ const gaps=benchGaps(b,d);
+ const plan=contentPlan(b);
+ const isSki=/South Peak|Timber|Basecamp|Snowfish|Bluebird|Mills|Mountain|Coffee|Shop/.test(b.n)||b.n==="Portfolio Rollup";
+ const trigger=isSki
+  ?{h:"Weather trigger armed — winter playbook",p:"When the forecast shows 6\"+ weekend snow (checked Mon–Tue), ski and cozy-getaway content boosts go out Wednesday with a \"powder weekend\" email. Evidence: snow-triggered automation lifted last-minute bookings ~23% at scale (Dataintelo ski-market report); posting within 12 hours of snowfall earns 3–5x engagement."}
+  :{h:"Weather trigger armed — coastal playbook",p:"Sunny-stretch forecasts shift budget to patio and waterfront creative (weather-matched ads earned +89% clicks in the Molson Coors case); rainy weekends flip to indoor offers — bad weather at home raises getaway searches."};
+ const highlights=[
+  `Instagram engagement is ${(d.er.ig/B.igER*100).toFixed(0)}% of the industry median — ${d.er.ig>B.igER?"above the bar":"closing the gap"}`,
+  `${fmt(d.web.keyEvents)} ${B.result} this period, ${getD(d,"web")>=0?"+":""}${getD(d,"web").toFixed(0)}% ${cmpLabel()}`,
+  `People-on-camera video earned ~${(2.1+d.er.ig).toFixed(1)}x the engagement of product-only posts this period`
+ ];
+ const lowlights=[
+  d.local.unanswered>2?`${d.local.unanswered} negative reviews sit unanswered (median response ${d.local.respHrs}h)`:d.local.rating<4.4?`Google rating ${d.local.rating.toFixed(1)}★ sits below the 4.4★ practitioner threshold`:`Only ${d.aio.cited} of 12 tracked "best of" questions cite us in AI answers`,
+  `Email clicks at ${pct(d.ctr.email)} ${d.ctr.email<B.emailClick?"trail":"barely clear"} the ${pct(B.emailClick)} industry median`,
+  `Search appearances outpace clicks — the visibility-to-visit gap widened again`
+ ];
+ const nexts=[
+  seasonIdea(b),
+  "Respond to every review within 24h; invite happy guests to mention specifics",
+  "Publish 2 answer-format pages (neighborhood guide, seasonal itinerary) to win AI citations"
+ ];
+ const recs=[
+  {ice:"8.4",h:seasonIdea(b),why:"Rising seasonal demand × this brand's stronger formats × carousel advantage (Rival IQ 2025). Seasonal terms at ~25–30% of their Trends/Pinterest peak mean a 1–2 month content lead — start now.",owner:"Content",eff:"Medium"},
+  {ice:"8.1",h:"Respond to every review within 24h; ask happy guests to mention specifics",why:`Rating ${d.local.rating.toFixed(1)}★, ${d.local.unanswered} unanswered negatives, ${d.local.vel30} new reviews/30 days. Descriptive reviews ("the harbor view") are what AI recommends from; responding lifts ratings ~0.12★ over 6 months (ReviewTrackers).`,owner:"Location mgr",eff:"Low"},
+  {ice:"7.7",h:"Publish 2 answer-format pages targeting AI citations",why:`Only ${d.aio.cited} of 12 tracked "best of" questions cite ${name}. Guides and itineraries with a named local author and original photos are what AI engines quote. Cited brands earned ~35% more clicks (Seer Interactive, 2025).`,owner:"Content",eff:"Medium"},
+  {ice:"7.2",h:"Shift one weekly static post to staff/guest-on-camera video",why:"People-on-camera earned 2–3x engagement this period; shares per view (the top growth signal) doubles.",owner:"Social",eff:"Low"},
+  {ice:"6.8",h:"Work the refresh queue",why:"Cornerstone pages older than 6 months lose AI citations — Ahrefs found cited content measurably fresher. Menus, room pages, and guides first.",owner:"Content",eff:"Low"}
+ ];
+ const news=[
+  {d:"Jun 2026",h:"Search Console added a Generative AI performance report",p:'Impressions from Google\'s AI features are reported separately — but Google says it is <a href="https://developers.google.com/search/blog">initially rolling out to a subset of properties</a>.',m:"What this means for us: check availability per property as it expands — free data for the visibility tile where offered. Not all our sites will have it yet."},
+  {d:"May 2026",h:"May core update completed (May 21 – Jun 2)",p:'Google\'s second core update of 2026, after March (Mar 27–Apr 8) and a March spam update — <a href="https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history">status dashboard</a>.',m:"What this means for us: traffic moves inside those windows were industry-wide — the update overlay on our charts marks them, and we judge changes outside the windows."},
+  {d:"May 2026",h:"GA4 added an 'AI Assistant' traffic channel",p:'Visits arriving from AI assistants are now separated in <a href="https://support.google.com/analytics/answer/9756891">GA4 channel definitions</a>.',m:"What this means for us: AI-assistant visits get their own row — few, but high-intent."},
+  {d:"Apr 2026",h:"Google tightened review-solicitation policies",p:'Staff review quotas and asking customers to name employees in reviews are prohibited; fake or incentivized reviews remain banned — <a href="https://support.google.com/contributionpolicy/answer/7400114">Maps content policy</a>.',m:"What this means for us: keep inviting reviews — no quotas, no name scripts. A sudden review-count drop may be Google's filters, not unhappy guests."},
+  {d:"Nov 2025",h:"Instagram launched free Competitive Insights; Meta retired 'impressions'",p:"Compare up to 10 accounts natively. Meta now reports 'views' everywhere.",m:"What this means for us: competitor strips run on free native data; year-over-year Meta comparisons across April 2025 carry a footnote — the ruler changed."}
+ ];
+ el.innerHTML=`
+  <div class="tldr"><b>How this works:</b> metrics are computed first; AI only interprets — it never does the math. In this prototype the insight text is illustrative; in production every card links the posts compared, sample size, period, outcome metric, and confidence, and anomalies are checked against weather, events, and Google's update calendar before an explanation is written.</div>
+  <div class="grid threes">
+   <div class="card"><h3 style="color:var(--good)">3 highlights</h3><ul>${highlights.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+   <div class="card"><h3 style="color:var(--bad)">3 lowlights</h3><ul>${lowlights.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+   <div class="card"><h3>3 next steps</h3><ul>${nexts.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+  </div>
+  <h2>Where ${name==="portfolio"?"the portfolio":name} differs from its benchmarks <span class="note">shown only where the gap is big enough to matter (±15%) — benchmark source named per row</span></h2>
+  <div class="card">${gaps.length?`<table><thead><tr><th>Metric</th><th>Us</th><th>Benchmark</th><th>Gap</th><th>Why it matters</th><th>Move</th></tr></thead><tbody>
+   ${gaps.map(g=>`<tr><td><strong>${g.m}</strong></td><td>${pct(g.us)}</td><td>${pct(g.bn)}<div class="sub2" style="font-size:10.5px;color:var(--muted)">${g.src}</div></td><td class="${g.gap>0?"up":"down"}">${g.gap>0?"+":""}${g.gap.toFixed(0)}%</td><td class="sub2">${g.why}</td><td class="sub2">${g.gap>0?"Outperforming — protect it, and reference it in ads":g.fix}</td></tr>`).join("")}
+   </tbody></table>`:`<p style="font-size:12.8px;line-height:1.6">Every tracked metric is within ±15% of its industry benchmark this period — no distortions worth acting on. Benchmarks stay out of the way until they make a difference.</p>`}</div>
+  <h2>This month's content plan <span class="note">strategic + timely for July 2026 · generated from season, demand signals, and this brand's past winners</span></h2>
+  <div class="grid threes">
+   <div class="card"><h3>Blog</h3><ul>${plan.blog.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
+   <div class="card"><h3>YouTube</h3><ul>${plan.yt.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
+   <div class="card"><h3>Social</h3><ul>${plan.social.map(x=>`<li><strong>${x.t}</strong><div class="sub2">${x.why} <span class="pill info">${x.due}</span></div></li>`).join("")}</ul></div>
+  </div>
+  <h2>Recommended actions <span class="note">ranked by impact × confidence × ease · each becomes a tracked decision with owner and due date</span></h2>
+  <div class="card"><table><thead><tr><th>Score</th><th>Action</th><th>Why now</th><th>Owner</th><th>Effort</th></tr></thead><tbody>
+  ${recs.map(r=>`<tr><td><strong>${r.ice}</strong></td><td><strong>${r.h}</strong></td><td>${r.why}</td><td>${r.owner}</td><td>${r.eff}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="card insight" style="margin-top:14px"><span class="tag">Automation</span><h3>${trigger.h}</h3><p>${trigger.p}</p></div>
+  <h2>Industry news → what it means for us <span class="note">each item carries a source link and verified date; items expire for review quarterly</span></h2>
+  ${news.map(n=>`<div class="news"><span class="date">${n.d} · verified Jul 2026</span><h3>${n.h}</h3><p>${n.p}</p><div class="means">${n.m}</div></div>`).join("")}`;
+ destroyCharts();
+}
+
+/* ---------- App state & wiring ---------- */
+const state={brand:BRANDS[0],view:"exec",channel:"Instagram",cmp:"yoy",mode:"owner"};
+const sel=document.getElementById("companySel");
+const groups={};
+BRANDS.forEach(b=>{
+ if(b.n==="Portfolio Rollup"){sel.add(new Option(b.n,b.n));return}
+ if(!groups[b.seg]){groups[b.seg]=document.createElement("optgroup");groups[b.seg].label=SEGLABEL[b.seg];sel.appendChild(groups[b.seg])}
+ groups[b.seg].appendChild(new Option(b.n,b.n));
+});
+sel.onchange=()=>{state.brand=BRANDS.find(x=>x.n===sel.value);render()};
+document.getElementById("rangeSel").onchange=render;
+document.getElementById("cmpSel").onchange=()=>{state.cmp=document.getElementById("cmpSel").value;render()};
+document.getElementById("modeSel").onchange=()=>{state.mode=document.getElementById("modeSel").value;render()};
+document.querySelectorAll("nav button").forEach(btn=>btn.onclick=()=>{
+ state.view=btn.dataset.view;
+ document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===btn));
+ render();
+});
+function render(){
+ const b=state.brand,d=brandData(b);
+ ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+ if(state.view==="exec")renderExec(b,d);
+ if(state.view==="channel")renderChannel(b,d,state.channel);
+ if(state.view==="comp")renderComp(b,d);
+ if(state.view==="paid")renderPaid(b,d);
+ if(state.view==="rev")renderRev(b,d);
+ if(state.view==="demo")renderDemo(b,d);
+ if(state.view==="ai")renderAI(b,d);
+}
+render();
+</script>
+</body>
+</html>
