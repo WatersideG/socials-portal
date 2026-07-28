@@ -38,6 +38,7 @@
   .kpi .delta{font-size:12px;font-weight:600}
   .kpi .sub2{font-size:11.5px;color:var(--muted);margin-top:4px}
   .kpi svg{display:block;margin-top:10px;width:100%;height:34px}
+  .srctag{margin-top:10px;padding-top:8px;border-top:1px solid #eef1f4;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
   .up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--warn)}
   .pill{font-size:10px;font-weight:700;padding:3px 9px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
   .pill.above{background:#e6f2ec;color:var(--good)} .pill.at{background:#f7edd8;color:var(--warn)} .pill.below{background:#f7e4e0;color:var(--bad)}
@@ -104,6 +105,7 @@
     .kpi .label{font-size:9px;letter-spacing:.8px}
     .kpi .val{font-size:21px}
     .kpi .sub2{font-size:10.5px}
+    .srctag{font-size:8.5px;letter-spacing:.3px;margin-top:8px;padding-top:6px}
     .pill{font-size:8px;padding:2px 5px;letter-spacing:.4px}
     .chtabs button{padding:6px 9px;font-size:9.5px;letter-spacing:.8px}
     h2{font-size:14px}
@@ -153,10 +155,11 @@
   </div>
 </header>
 <nav>
-  <button class="active" data-view="exec">Home</button>
+  <button class="active" data-view="exec">Scorecard</button>
   <button data-view="channel">Socials</button>
   <button data-view="paid">Paid Socials</button>
   <button data-view="web">Website</button>
+  <button data-view="rev2">Reviews</button>
   <button data-view="comp">Competitors</button>
   <button data-view="rev">Revenue</button>
   <button data-view="demo">Customers</button>
@@ -166,6 +169,7 @@
   <div id="view-exec"></div>
   <div id="view-channel" style="display:none"></div>
   <div id="view-web" style="display:none"></div>
+  <div id="view-rev2" style="display:none"></div>
   <div id="view-comp" style="display:none"></div>
   <div id="view-paid" style="display:none"></div>
   <div id="view-rev" style="display:none"></div>
@@ -538,9 +542,30 @@ function spark(data,color){
  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color||"#6E8CAD"}" stroke-width="2"/></svg>`;
 }
 /* metric card; optional status chip only for exceptional states (e.g. unavailable) */
+/* every card names the system its number comes from — hover/tap shows the exact endpoint */
+const SRC_MAP=[
+ [/visitor|page view|session duration|bounce|visits|engaged|actions completed|visit-to-action|site performance|outcomes|intent shown/i,["GA4","Google Analytics 4 · Data API"]],
+ [/clicks from google|times seen|click rate|average position|branded|seen — visibility|search appearance/i,["Search Console","Google Search Console · Performance API"]],
+ [/ai share|ai answers|ai assistant/i,["AI visibility","Prompt tracking + GSC AI report"]],
+ [/lead/i,["HubSpot","HubSpot · contacts & source attribution"]],
+ [/rating|review|third-party presence|reputation/i,["Reviews","Google Business Profile · Yelp · TripAdvisor"]],
+ [/calls from profile|direction requests|profile health/i,["Business Profile","Google Business Profile · Performance API"]],
+ [/spend|cost per|roas|needs attention|awareness — separate/i,["Ads platforms","Google Ads + Meta Ads Manager"]],
+ [/follower|posts|stories|engagement|shares|likes|reels|watch|completion|thumbnail|subscriber/i,["Social platforms","Meta · TikTok · YouTube APIs"]],
+ [/email|subscriber|open rate|unsubscrib|clicks per open|revenue per send/i,["Email platform","HubSpot / ESP · campaign API"]],
+ [/sales today|month to date|growth opportunit|underperform/i,["POS / P&L","Toast API · monthly P&L import"]],
+ [/lighthouse|performance|accessibility|best practices|seo/i,["Lighthouse","PageSpeed Insights API"]],
+ [/mention/i,["Mentions","Review APIs · Reddit · press monitoring"]],
+ [/core age|gender|home market|new vs returning/i,["Audience","GA4 + Meta audience insights"]]
+];
+function srcFor(label){
+ for(const [re,v] of SRC_MAP) if(re.test(label)) return v;
+ return ["Portal","Computed in the portal from connected sources"];
+}
 function kpi(label,val,deltaHtml,benchHtml,sub,sparkHtml,small,src){
- const chip=`<span class="pill sample">${src||"sample"}</span>`;
- return `<div class="card kpi ${small?"small":""}"><div class="label"><span>${label}</span><span style="display:flex;gap:4px">${benchHtml||""}${chip}</span></div><div class="val">${val}</div>${deltaHtml||""}${sub?`<div class="sub2">${sub}</div>`:""}${sparkHtml||""}</div>`;
+ const [nm,tip]=srcFor(label);
+ const status=src&&src!=="sample"?src.toUpperCase():"SAMPLE";
+ return `<div class="card kpi ${small?"small":""}"><div class="label"><span>${label}</span>${benchHtml||""}</div><div class="val">${val}</div>${deltaHtml||""}${sub?`<div class="sub2">${sub}</div>`:""}${sparkHtml||""}<div class="srctag" title="${tip}">${nm} · <span class="pill sample">${status}</span></div></div>`;
 }
 let charts=[];
 function destroyCharts(){charts.forEach(c=>c.destroy());charts=[]}
@@ -576,14 +601,36 @@ function renderLanding(el){
    if(getD(x.d,"outcome")<0){sev+=2;why.push("outcomes down "+Math.abs(getD(x.d,"outcome")).toFixed(0)+"%")}
    if(getD(x.d,"gsc")<0){sev+=1;why.push("search demand soft")}
    return {...x,sev,why}}).filter(x=>x.sev>=2).sort((a,c)=>c.sev-a.sev).slice(0,3);
+ /* portfolio task queue — owner-assignable, derived from the same signals as the flags */
+ const tasks=[];
+ flags.forEach(x=>{
+  if(x.d.local.rating<4.3||x.d.local.unanswered>2)tasks.push({t:`Reply to reviews at ${x.b.n} (≈${x.d.local.unanswered} estimated waiting)`,b:x.b.n,o:"Location mgr",due:"Today",imp:"Protects local + AI discovery"});
+  if(getD(x.d,"outcome")<0)tasks.push({t:`Diagnose the ${BENCH[x.b.seg].result} drop at ${x.b.n} (${getD(x.d,"outcome").toFixed(0)}%)`,b:x.b.n,o:"Marketing lead",due:"This week",imp:"Recover lost demand"});
+  if(getD(x.d,"gsc")<0)tasks.push({t:`Rebuild search visibility for ${x.b.n}`,b:x.b.n,o:"Content",due:"2 weeks",imp:"Leading indicator of next season"});
+ });
+ tasks.push({t:"Connect the first live feeds (GA4 + Search Console)",b:"All businesses",o:"Admin",due:"This month",imp:"Every number is demo until then"});
+ const lead=scored.map(x=>({n:x.b.n,seg:x.b.seg,out:getD(x.d,"outcome"),conv:x.d.conv.web,er:x.d.er.ig/BENCH[x.b.seg].igER*100,rating:x.d.local.rating,score:x.score}));
  el.innerHTML=`
   <h2 style="margin-top:0">Best performing businesses <span class="note">${cmpLabel().replace("vs ","ranked vs ")} · outcomes growth + conversion + engagement vs each segment's benchmarks</span></h2>
   <div class="logo-grid">
   ${top.map(x=>`<button class="logo-card" data-open="${x.b.n}" aria-label="Open ${x.b.n}">${logoImg(x.b.n,64)}<span class="logo-name">${x.b.n}</span><span class="delta ${getD(x.d,"outcome")>=0?"up":"down"}" style="font-size:11.5px">${getD(x.d,"outcome")>=0?"+":""}${getD(x.d,"outcome").toFixed(0)}% ${BENCH[x.b.seg].result}</span></button>`).join("")}
   </div>
-  ${flags.length?`<h2>Needs attention</h2><div class="card">${flags.map(x=>`<div class="insight alert" style="margin-bottom:8px"><span class="tag">${x.b.n}</span><p>${x.why.join(" · ")} — <a href="#" data-open="${x.b.n}" style="color:var(--steel)">open scorecard</a></p></div>`).join("")}</div>`:""}
-  <p class="caption">Choose a business above or from the dropdown to see its full scorecard, channels, competitors, campaigns, revenue centers, demographics, and advice.</p>`;
+  <h2>Needs attention <span class="note">worst signals first — open the business to act</span></h2>
+  <div class="card">${flags.length?`<table><thead><tr><th>Business</th><th>What's wrong</th><th>Rating</th><th>${cmpLabel().includes("last year")?"Outcomes YoY":"Outcomes"}</th><th></th></tr></thead><tbody>
+   ${flags.map(x=>`<tr><td><strong>${x.b.n}</strong></td><td class="sub2">${x.why.join(" · ")}</td><td>${x.d.local.rating.toFixed(1)}★</td><td class="${getD(x.d,"outcome")>=0?"up":"down"}">${getD(x.d,"outcome")>=0?"+":""}${getD(x.d,"outcome").toFixed(0)}%</td><td><a href="#" data-open="${x.b.n}" style="color:var(--steel);font-size:11px;letter-spacing:1px;text-transform:uppercase">Open →</a></td></tr>`).join("")}
+   </tbody></table>`:'<p style="font-size:13px">No business is flagged this period — outcomes, reviews, and search demand are all holding.</p>'}</div>
+  <h2>Tasks <span class="note">generated from the flags above · assign and track</span></h2>
+  <div class="card"><table><thead><tr><th>Task</th><th>Business</th><th>Assignee</th><th>Due</th><th>Why it matters</th><th>Status</th></tr></thead><tbody>
+  ${tasks.slice(0,6).map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td class="sub2">${x.b}</td><td><select data-tka="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM","Marketing lead"].map(o=>`<option ${taskState[i]&&taskState[i].a===o?"selected":""}>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-tks="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option ${taskState[i]&&taskState[i].s===o?"selected":""}>${o}</option>`).join("")}</select></td></tr>`).join("")}
+  </tbody></table><div class="caption">Assignments persist for this session; production stores them with an audit trail and measures each task's result after 30 days.</div></div>
+  <h2>Leaderboard <span class="note">all ${lead.length} businesses ranked · ${cmpLabel()}</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>#</th><th>Business</th><th>Segment</th><th>Outcomes change</th><th>Visit-to-action</th><th>IG engagement vs median</th><th>Rating</th></tr></thead><tbody>
+  ${lead.map((x,i)=>`<tr class="${i<3?"hl":""}"><td>${i+1}</td><td><a href="#" data-open="${x.n}" style="color:inherit;font-weight:600">${x.n}</a></td><td class="sub2">${SEGLABEL[x.seg]}</td><td class="${x.out>=0?"up":"down"}">${x.out>=0?"+":""}${x.out.toFixed(0)}%</td><td>${pct(x.conv)}</td><td>${pct(x.er,0)}</td><td>${x.rating.toFixed(1)}★</td></tr>`).join("")}
+  </tbody></table><div class="caption">Ranked by outcomes growth, conversion against segment benchmark, and engagement against segment median — so a restaurant competes with restaurant norms, not with a builder's.</div></div>
+  <p class="caption">Choose a business above or from the dropdown for its full scorecard, socials, reviews, campaigns, revenue, customers, and advice.</p>`;
  el.querySelectorAll("[data-open]").forEach(x=>x.onclick=(e)=>{e.preventDefault();const nm=x.dataset.open;sel.value=nm;state.brand=BRANDS.find(y=>y.n===nm);render()});
+ el.querySelectorAll("[data-tka]").forEach(x=>x.onchange=()=>{const i=+x.dataset.tka;taskState[i]=taskState[i]||{};taskState[i].a=x.value});
+ el.querySelectorAll("[data-tks]").forEach(x=>x.onchange=()=>{const i=+x.dataset.tks;taskState[i]=taskState[i]||{};taskState[i].s=x.value});
 }
 
 /* ---------- TL;DR ---------- */
@@ -701,6 +748,18 @@ function renderExec(b,d){
     <div class="caption">Google answers many questions on its own page now. Being seen still builds the brand even when clicks lag. AI-assistant visits are few but high-intent — see Channels → Search &amp; AI.</div></div>
     <div class="card"><h2 style="margin-top:0;font-size:15px">What matters this period</h2>${execInsights(b,d).map(i=>`<div class="insight ${i.cls}"><span class="tag">${i.tag}</span><h3>${i.h}</h3><p>${i.p}</p><div class="ev">${i.ev}</div></div>`).join("")}</div>
   </div>
+  ${(()=>{const t=[];
+    if(d.local.unanswered>2)t.push({t:`Reply to ≈${d.local.unanswered} estimated unanswered reviews (median response ${d.local.respHrs}h)`,o:"Location mgr",due:"Today",imp:"Protects local ranking + AI discovery"});
+    if(d.local.rating<4.4)t.push({t:`Lift rating from ${d.local.rating.toFixed(1)}★ toward 4.4★ — invite recent happy guests`,o:"Location mgr",due:"This month",imp:"Below 4.4★ AI recommendations pass us over"});
+    if(getD(d,"outcome")<0)t.push({t:`Diagnose the ${BENCH[b.seg].result} decline (${getD(d,"outcome").toFixed(0)}%) — check booking path and offers`,o:"Marketing lead",due:"This week",imp:"Recover lost demand"});
+    if(d.aio.cited<4)t.push({t:`Publish 2 answer-format pages to win AI citations (${d.aio.cited} of 12 tracked questions cite us)`,o:"Content",due:"2 weeks",imp:"A citation is worth ~35% more clicks"});
+    if(paidIssues(b)>0)t.push({t:`Fix ${paidIssues(b)} paid campaign${paidIssues(b)>1?"s":""} — pacing or fatigued creative`,o:"Paid media",due:"This week",imp:"Stop wasted spend"});
+    if(d.ctr.email<BENCH[b.seg].emailClick)t.push({t:"Rework email: segment the list and rewrite subject lines",o:"Marketing lead",due:"2 weeks",imp:"Clicks trail the industry median"});
+    const flagged=t.length;
+    return `<h2>Needs attention <span class="note">${flagged?flagged+" open item"+(flagged>1?"s":""):"nothing flagged this period"}</span></h2>
+    <div class="card">${flagged?`<table><thead><tr><th>Issue</th><th>Owner</th><th>Due</th><th>Why it matters</th><th>Status</th></tr></thead><tbody>
+    ${t.map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td><select data-bta="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM"].map(o=>`<option>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-bts="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option>${o}</option>`).join("")}</select></td></tr>`).join("")}
+    </tbody></table>`:'<p style="font-size:13px">Reviews, outcomes, campaigns, email, and AI visibility are all holding this period. Keep the cadence.</p>'}</div>`})()}
   <details><summary>All channels scoreboard</summary><div class="inner">
   <table><thead><tr><th>Channel</th><th>Audience</th><th>Change</th><th>Output</th><th>Engagement</th><th>Industry median</th><th>Standing</th></tr></thead><tbody>
     <tr><td><strong>Instagram</strong></td><td>${fmt(d.followers.ig)}</td><td>${delta(getD(d,"ig"))}</td><td>${d.posts.ig} posts + ${d.stories} stories</td><td>${pct(d.er.ig)}</td><td>${pct(B.igER)}</td><td>${pill(d.er.ig,B.igER,"Rival IQ 2026 per-follower medians")}</td></tr>
@@ -1019,6 +1078,69 @@ function renderChannel(b,d,ch){
   const pub=el.querySelector("#gbpPublish");if(pub)pub.onclick=()=>{g.published=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});render()};
  }
  el.querySelectorAll("[data-ch]").forEach(btn=>btn.onclick=()=>{state.channel=btn.dataset.ch;render()});
+}
+
+/* ---------- Reviews: per-platform totals, averages, latest ---------- */
+function reviewData(b){
+ const r=rng(hash(b.n+"reviews"));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const isLF=/Longfellow/.test(b.n), rest=/Restaurant|Timber|Basecamp|Snowfish|Bluebird|Little Blue|Coffee|Creamery/.test(b.n);
+ const hotel=/Tides|South Peak|Three Suns|Harbor|Whale|Alpine|Mills/.test(b.n);
+ const plats=[{n:"Google",w:1,url:"Google Business Profile"}];
+ if(rest||hotel||/Marina|Service Center|Shop/.test(b.n))plats.push({n:"Yelp",w:mult(.18,.4),url:"Yelp Fusion API"});
+ plats.push({n:"Facebook",w:mult(.12,.3),url:"Meta Page ratings"});
+ if(rest||hotel)plats.push({n:"TripAdvisor",w:mult(.15,.45),url:"TripAdvisor Content API"});
+ if(isLF)plats.push({n:"Houzz",w:mult(.2,.5),url:"Houzz pro profile"});
+ const base=Math.round(120*(0.4+r()*2)*mult(.5,1.6));
+ const SNIP={
+  dining:[[5,"Best meal we've had on the harbor — ask for a window table."],[4,"Great food, service got slammed at 7pm but recovered."],[5,"The wood-fired special is the move. We'll be back."],[2,"Waited 40 minutes past our reservation time."],[5,"Staff remembered us from last summer. That's why we come."]],
+  hospitality:[[5,"Views from the room were unreal. Already rebooked for fall."],[4,"Beautiful property; pool area was crowded by 10am."],[5,"Front desk went out of their way for our anniversary."],[3,"Lovely spot but parking is tight on weekends."],[5,"Sunrise from the balcony is worth the trip alone."]],
+  realestate:[[5,"They built our neighbor's place — craftsmanship is next level."],[5,"Communication throughout the remodel was excellent."],[4,"Gorgeous work; schedule slipped a few weeks."],[5,"The kitchen came out better than the renderings."],[4,"Worth the waitlist."]],
+  marine:[[5,"Repowered our outboard in a week. Honest shop."],[4,"Storage rates went up but service is worth it."],[5,"Got us on the water for the holiday weekend."],[3,"Slip waitlist is long — plan ahead."],[5,"Best mechanics on the harbor."]],
+  retail:[[5,"Grabbed the new Helly Hansen drop — quality stuff."],[4,"Resort pricing, but the staff picks are solid."],[5,"Helped me find the right layers for the trail."],[4,"Wish they restocked beanies faster."],[5,"Great selection for a mountain shop."]]
+ };
+ const snips=SNIP[b.seg]||SNIP.dining;
+ const tot=plats.reduce((a,p)=>a+p.w,0);
+ plats.forEach(p=>{
+  p.count=Math.max(3,Math.round(base*p.w/tot));
+  p.avg=Math.min(5,Math.max(3.2,d0(b)+mult(-.35,.35)));
+  p.new30=Math.round(p.count*mult(.02,.09));
+  p.latest=Array.from({length:3+Math.floor(r()*3)},(_,i)=>{const sn=snips[Math.floor(r()*snips.length)];
+   return {stars:sn[0],text:sn[1],ago:Math.round(mult(1,26))+i*3,replied:r()>0.32}}).sort((a,c)=>a.ago-c.ago).slice(0,5);
+ });
+ function d0(bb){return brandDataRaw(bb).local.rating}
+ const all=plats.reduce((a,p)=>a+p.count,0);
+ const wavg=plats.reduce((a,p)=>a+p.avg*p.count,0)/all;
+ const unreplied=plats.reduce((a,p)=>a+p.latest.filter(x=>!x.replied&&x.stars<=3).length,0);
+ return {plats,all,wavg,new30:plats.reduce((a,p)=>a+p.new30,0),unreplied};
+}
+function renderReviews(b,d){
+ const el=document.getElementById("view-rev2");
+ const rv=reviewData(b);
+ const stars=n=>"★".repeat(Math.round(n))+"☆".repeat(5-Math.round(n));
+ el.innerHTML=`
+  <div class="tldr"><b>${b.n}:</b> ${rv.wavg.toFixed(1)}★ across <b>${fmt(rv.all)} reviews</b> on ${rv.plats.length} platforms, ${rv.new30} new in the last 30 days.
+  ${rv.unreplied?`<b>${rv.unreplied} recent negative review${rv.unreplied>1?"s":""} without a reply</b> — respond within 24 hours.`:"Every recent negative review has a reply — keep it up."}
+  ${rv.wavg<4.4?" Rating sits below the 4.4★ threshold where AI-driven recommendations start passing a business over.":""}</div>
+  <div class="grid hero">
+   ${kpi("Total reviews",fmt(rv.all),delta(getD(d,"local")/2),"","All platforms combined",null)}
+   ${kpi("Average score",rv.wavg.toFixed(1)+"★","",pill(rv.wavg,4.4,"4.4★ practitioner AI-discovery threshold"),"Weighted by review count per platform",null)}
+   ${kpi("New reviews, 30 days",rv.new30,delta(getD(d,"local")),"","Velocity matters more than total count for local rankings",null)}
+   ${kpi("Awaiting reply",rv.unreplied,"",rv.unreplied?'<span class="pill below">Act today</span>':'<span class="pill above">Clear</span>',"Recent negatives with no response",null)}
+  </div>
+  ${rv.plats.map(p=>`
+   <h2>${p.n} <span class="note">${p.url} · ${fmt(p.count)} reviews · ${p.new30} new in 30 days</span></h2>
+   <div class="grid two">
+    <div class="card"><div class="grid kpis">
+     ${kpi(p.n+" reviews",fmt(p.count),"","","Lifetime total on this platform",null,true)}
+     ${kpi(p.n+" rating",p.avg.toFixed(1)+"★","",pill(p.avg,4.4,"4.4★ threshold"),stars(p.avg),null,true)}
+    </div></div>
+    <div class="card"><h3 style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-family:'Nord-Book','Jost',sans-serif;font-weight:700">Latest reviews</h3>
+    <table><thead><tr><th>When</th><th>Rating</th><th>Review</th><th>Reply</th></tr></thead><tbody>
+    ${p.latest.map(x=>`<tr><td style="white-space:nowrap">${x.ago}d ago</td><td>${x.stars}★</td><td>${x.text}</td><td>${x.replied?'<span class="pill above">Replied</span>':x.stars<=3?'<span class="pill below">Reply now</span>':'<span class="pill at">Say thanks</span>'}</td></tr>`).join("")}
+    </tbody></table></div>
+   </div>`).join("")}
+  <div class="caption" style="margin-top:14px">Ratings are weighted by review count, never averaged flat — a 5.0★ from 4 reviews doesn't outweigh a 4.5★ from 400. Google Business Profile signals are ~32% of local ranking and reviews ~20% (Whitespark 2026). Compliance: no staff review quotas, no employee-name requests, no AI-drafted reviews. Employer reviews (Glassdoor, Indeed) are tracked separately under Socials → Mentions and never blended into customer sentiment.</div>`;
+ destroyCharts();
 }
 
 /* ---------- Website tab: audience analytics, sources, top pages, freshness, Lighthouse ---------- */
@@ -1464,21 +1586,22 @@ document.querySelectorAll("nav button").forEach(btn=>btn.onclick=()=>{
  document.querySelectorAll("nav button").forEach(x=>{x.classList.toggle("active",x===btn);x.setAttribute("aria-current",x===btn?"page":"false")});
  render();
 });
-const decState={};function d0k(x){return x.d.slice(0,40)}
+const decState={};const taskState={};function d0k(x){return x.d.slice(0,40)}
 function render(){
  const ri=document.getElementById("rangeInfo");if(ri)ri.textContent=rangeText();
  if(!state.brand){
-  ["exec","channel","web","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+  ["exec","channel","web","rev2","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
   destroyCharts();renderLanding(document.getElementById("view-"+state.view));return;
  }
  const b=state.brand,d=brandData(b);
- ["exec","channel","web","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+ ["exec","channel","web","rev2","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
  if(state.view==="exec"){renderExec(b,d);
   document.querySelectorAll("[data-deca]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].a=sel2.value});
   document.querySelectorAll("[data-decs]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].s=sel2.value});
  }
  if(state.view==="channel")renderChannel(b,d,state.channel);
  if(state.view==="web")renderWebsite(b,d);
+ if(state.view==="rev2")renderReviews(b,d);
  if(state.view==="comp")renderComp(b,d);
  if(state.view==="paid")renderPaid(b,d);
  if(state.view==="rev")renderRev(b,d);
