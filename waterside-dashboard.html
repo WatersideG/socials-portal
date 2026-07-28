@@ -82,6 +82,9 @@
   details{background:var(--bg);border:1px solid var(--line);padding:0;margin-top:14px}
   details summary{cursor:pointer;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);font-family:'Nord-Book','Jost',sans-serif}
   details .inner{padding:4px 18px 16px}
+  .lbgrid{grid-template-columns:repeat(auto-fill,minmax(268px,1fr))}
+  .lbcard table td{border-bottom:1px solid #f4f6f8}
+  .lbcard table tr:last-child td{border-bottom:none}
   .logo-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
   .logo-card{background:#fff;border:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;font-family:'Nord-Book','Jost',sans-serif;transition:border-color .15s}
   .logo-card:hover{border-color:var(--steel)}
@@ -609,7 +612,43 @@ function renderLanding(el){
   if(getD(x.d,"gsc")<0)tasks.push({t:`Rebuild search visibility for ${x.b.n}`,b:x.b.n,o:"Content",due:"2 weeks",imp:"Leading indicator of next season"});
  });
  tasks.push({t:"Connect the first live feeds (GA4 + Search Console)",b:"All businesses",o:"Admin",due:"This month",imp:"Every number is demo until then"});
- const lead=scored.map(x=>({n:x.b.n,seg:x.b.seg,out:getD(x.d,"outcome"),conv:x.d.conv.web,er:x.d.er.ig/BENCH[x.b.seg].igER*100,rating:x.d.local.rating,score:x.score}));
+ /* leaderboard: one card per metric, every business ranked inside it */
+ const LB=scored.map(x=>{
+  const b=x.b,d=x.d,B=BENCH[b.seg];
+  const mix=trafficMix(b);
+  const rv=revData(b);
+  const likes=["fb","ig","tt"].reduce((a,ch)=>a+likeShare(b,d,ch).likes,0);
+  const shares=["fb","ig","tt"].reduce((a,ch)=>a+likeShare(b,d,ch).shares,0);
+  const aud=d.followers.fb+d.followers.ig+d.followers.yt+d.followers.tt+d.email.list;
+  const erIdx=(d.er.ig/B.igER+d.er.fb/B.fbER+d.er.tt/B.ttER)/3*100;
+  return {n:b.n,seg:b.seg,
+   sales:rv.totMtd, leads:d.leads.total, subs:newSubs(b,d), aud,
+   traffic:d.web.sessions, ai:mix.ai, search:mix.search,
+   ls:likes+shares, er:erIdx, result:B.result};
+ });
+ const CARDS=[
+  {k:"sales",t:"Total sales",f:v=>"$"+fmt(v),note:"Month to date, all revenue centers",src:"POS / P&L"},
+  {k:"leads",t:"Leads / customers",f:v=>fmt(v),note:"HubSpot contacts created this period",src:"HubSpot"},
+  {k:"subs",t:"New email subscribers",f:v=>fmt(v),note:"Net adds this period",src:"Email platform"},
+  {k:"aud",t:"Total audience",f:v=>fmt(v),note:"Followers across all channels + email list",src:"Social + email"},
+  {k:"traffic",t:"Website traffic",f:v=>fmt(v),note:"Sessions this period",src:"GA4"},
+  {k:"ai",t:"AI share of traffic",f:v=>pct(v,1),note:"Visits from AI assistants — small but high-intent",src:"GA4"},
+  {k:"search",t:"Search share of traffic",f:v=>pct(v,0),note:"Organic search share of sessions",src:"GA4"},
+  {k:"ls",t:"Social likes & shares",f:v=>fmt(v),note:"Combined interactions across Meta, Instagram, TikTok",src:"Social platforms"},
+  {k:"er",t:"Social engagement rate",f:v=>pct(v,0),note:"Engagement vs each segment's median (100% = at median)",src:"Social platforms"}
+ ];
+ const lbCard=c=>{
+  const ranked=[...LB].sort((a,x)=>x[c.k]-a[c.k]);
+  const top=ranked.slice(0,5);
+  return `<div class="card lbcard"><div class="label" style="font-size:10.5px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:700">${c.t}</div>
+   <div class="val" style="font-size:24px;font-family:'Nord-Medium','Jost',serif;color:var(--navy);margin:8px 0 2px">${c.f(ranked[0][c.k])}</div>
+   <div class="sub2" style="font-size:11.5px;color:var(--muted)">${ranked[0].n}</div>
+   <table style="margin-top:10px"><tbody>
+   ${top.map((x,i)=>`<tr><td style="width:18px;color:var(--muted);font-size:11px;padding:5px 4px">${i+1}</td><td style="padding:5px 4px"><a href="#" data-open="${x.n}" style="color:${i===0?"var(--navy)":"inherit"};font-weight:${i===0?"600":"400"};font-size:12px">${x.n}</a></td><td style="text-align:right;padding:5px 4px;font-size:12px;white-space:nowrap">${c.f(x[c.k])}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="srctag" title="Ranked across all ${LB.length} businesses">${c.src} · <span class="pill sample">SAMPLE</span></div>
+   <div class="caption" style="margin-top:6px;font-size:10.5px">${c.note}</div></div>`;
+ };
  el.innerHTML=`
   <h2 style="margin-top:0">Best performing businesses <span class="note">${cmpLabel().replace("vs ","ranked vs ")} · outcomes growth + conversion + engagement vs each segment's benchmarks</span></h2>
   <div class="logo-grid">
@@ -623,10 +662,13 @@ function renderLanding(el){
   <div class="card"><table><thead><tr><th>Task</th><th>Business</th><th>Assignee</th><th>Due</th><th>Why it matters</th><th>Status</th></tr></thead><tbody>
   ${tasks.slice(0,6).map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td class="sub2">${x.b}</td><td><select data-tka="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM","Marketing lead"].map(o=>`<option ${taskState[i]&&taskState[i].a===o?"selected":""}>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-tks="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option ${taskState[i]&&taskState[i].s===o?"selected":""}>${o}</option>`).join("")}</select></td></tr>`).join("")}
   </tbody></table><div class="caption">Assignments persist for this session; production stores them with an audit trail and measures each task's result after 30 days.</div></div>
-  <h2>Leaderboard <span class="note">all ${lead.length} businesses ranked · ${cmpLabel()}</span></h2>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>#</th><th>Business</th><th>Segment</th><th>Outcomes change</th><th>Visit-to-action</th><th>IG engagement vs median</th><th>Rating</th></tr></thead><tbody>
-  ${lead.map((x,i)=>`<tr class="${i<3?"hl":""}"><td>${i+1}</td><td><a href="#" data-open="${x.n}" style="color:inherit;font-weight:600">${x.n}</a></td><td class="sub2">${SEGLABEL[x.seg]}</td><td class="${x.out>=0?"up":"down"}">${x.out>=0?"+":""}${x.out.toFixed(0)}%</td><td>${pct(x.conv)}</td><td>${pct(x.er,0)}</td><td>${x.rating.toFixed(1)}★</td></tr>`).join("")}
-  </tbody></table><div class="caption">Ranked by outcomes growth, conversion against segment benchmark, and engagement against segment median — so a restaurant competes with restaurant norms, not with a builder's.</div></div>
+  <h2>Leaderboard <span class="note">top 5 of ${LB.length} businesses per metric · ${cmpLabel()} · click any name to open it</span></h2>
+  <div class="grid lbgrid">${CARDS.map(lbCard).join("")}</div>
+  <details><summary>Full ranking, all businesses</summary><div class="inner" style="overflow-x:auto">
+  <table><thead><tr><th>Business</th><th>Segment</th><th>Sales</th><th>Leads</th><th>New subs</th><th>Audience</th><th>Traffic</th><th>AI share</th><th>Search share</th><th>Likes &amp; shares</th><th>Eng. rate</th></tr></thead><tbody>
+  ${[...LB].sort((a,x)=>x.sales-a.sales).map(x=>`<tr><td><a href="#" data-open="${x.n}" style="color:inherit;font-weight:600">${x.n}</a></td><td class="sub2">${SEGLABEL[x.seg]}</td><td>$${fmt(x.sales)}</td><td>${fmt(x.leads)}</td><td>${fmt(x.subs)}</td><td>${fmt(x.aud)}</td><td>${fmt(x.traffic)}</td><td>${pct(x.ai,1)}</td><td>${pct(x.search,0)}</td><td>${fmt(x.ls)}</td><td>${pct(x.er,0)}</td></tr>`).join("")}
+  </tbody></table>
+  <div class="caption">Engagement rate is indexed to each segment's median so a restaurant competes with restaurant norms, not a builder's — 100% means exactly at median. Sales are month-to-date and not affected by the global date range until live P&L feeds connect.</div></div></details>
   <p class="caption">Choose a business above or from the dropdown for its full scorecard, socials, reviews, campaigns, revenue, customers, and advice.</p>`;
  el.querySelectorAll("[data-open]").forEach(x=>x.onclick=(e)=>{e.preventDefault();const nm=x.dataset.open;sel.value=nm;state.brand=BRANDS.find(y=>y.n===nm);render()});
  el.querySelectorAll("[data-tka]").forEach(x=>x.onchange=()=>{const i=+x.dataset.tka;taskState[i]=taskState[i]||{};taskState[i].a=x.value});
@@ -1080,6 +1122,20 @@ function renderChannel(b,d,ch){
  el.querySelectorAll("[data-ch]").forEach(btn=>btn.onclick=()=>{state.channel=btn.dataset.ch;render()});
 }
 
+/* ---------- Traffic mix (shared by Website tab and Leaderboard) ---------- */
+function trafficMix(b){
+ const r=rng(hash(b.n+"mix"+period().days));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const SRC=[["Organic Search","Organic",mult(.24,.40)],["Direct","Direct",mult(.14,.24)],["Paid Search","Paid",mult(.06,.16)],["Paid Social","Paid",mult(.05,.14)],["Organic Social","Organic",mult(.06,.14)],["Email","Owned",mult(.04,.10)],["Referral","Referral",mult(.03,.08)],["AI Assistants","Organic · AI",mult(.005,.02)]];
+ const tot=SRC.reduce((a,x)=>a+x[2],0);
+ const rows=SRC.map(x=>({n:x[0],type:x[1],share:x[2]/tot*100}));
+ return {rows,search:rows.find(x=>x.n==="Organic Search").share,ai:rows.find(x=>x.n==="AI Assistants").share};
+}
+/* new email subscribers for the period */
+function newSubs(b,d){
+ const r=rng(hash(b.n+"subs"+period().days));
+ return Math.max(1,Math.round(d.email.list*(0.008+r()*0.035)*(period().days/30)));
+}
+
 /* ---------- Reviews: per-platform totals, averages, latest ---------- */
 function reviewData(b){
  const r=rng(hash(b.n+"reviews"));const mult=(lo,hi)=>lo+r()*(hi-lo);
@@ -1160,9 +1216,7 @@ function renderWebsite(b,d){
  const durS=Math.round(mult(75,255));
  const dur=Math.floor(durS/60)+"m "+String(durS%60).padStart(2,"0")+"s";
  const bounce=100-d.web.engRate;
- const SRC=[["Organic Search","Organic",mult(.24,.40)],["Direct","Direct",mult(.14,.24)],["Paid Search","Paid",mult(.06,.16)],["Paid Social","Paid",mult(.05,.14)],["Organic Social","Organic",mult(.06,.14)],["Email","Owned",mult(.04,.10)],["Referral","Referral",mult(.03,.08)],["AI Assistants","Organic · AI",mult(.005,.02)]];
- const tot=SRC.reduce((a,x)=>a+x[2],0);
- const srcRows=SRC.map(x=>({n:x[0],type:x[1],share:x[2]/tot*100,sess:Math.round(d.web.sessions*x[2]/tot)})).sort((a,c)=>c.sess-a.sess);
+ const srcRows=trafficMix(b).rows.map(x=>({...x,sess:Math.round(d.web.sessions*x.share/100)})).sort((a,c)=>c.sess-a.sess);
  const pages=(TOP_PAGES[b.seg]||TOP_PAGES.dining).map(([p,sh])=>({p,views:Math.round(pv*sh*mult(.85,1.15)),t:Math.round(mult(35,190)),ke:Math.round(d.web.keyEvents*sh*mult(.6,1.6))}));
  const stale=[
   ["/events","Past event still listed — 'Summer Kickoff, June 14'","Remove or archive",Math.round(mult(2,6))+" weeks ago"],
@@ -1181,7 +1235,7 @@ function renderWebsite(b,d){
   <div class="grid two" style="margin-top:14px">
    <div class="card"><h2 style="margin-top:0;font-size:15px">Traffic by type &amp; source <span class="note">GA4 default channel groups</span></h2>
    <table><thead><tr><th>Source</th><th>Type</th><th>Sessions</th><th>Share</th></tr></thead><tbody>
-   ${srcRows.map(x=>`<tr><td><strong>${x.n}</strong></td><td class="sub2">${x.type}</td><td>${fmt(x.sess)}</td><td>${pct(x.share,0)}</td></tr>`).join("")}
+   ${srcRows.map(x=>`<tr><td><strong>${x.n}</strong></td><td class="sub2">${x.type}</td><td>${fmt(x.sess)}</td><td>${pct(x.share)}</td></tr>`).join("")}
    </tbody></table>
    <div class="caption">AI Assistants is small but high-intent — GA4's dedicated channel (May 2026). Paid share above ~35% means rented traffic; grow organic and email to own the audience.</div></div>
    <div class="card"><h2 style="margin-top:0;font-size:15px">Where sessions come from</h2><div class="chartbox"><canvas id="webSrcChart"></canvas></div></div>
