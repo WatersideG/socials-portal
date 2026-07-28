@@ -155,6 +155,7 @@
 <nav>
   <button class="active" data-view="exec">Scorecard</button>
   <button data-view="channel">Channels</button>
+  <button data-view="web">Website</button>
   <button data-view="comp">Competitors</button>
   <button data-view="paid">Paid Campaigns</button>
   <button data-view="rev">Revenue Centers</button>
@@ -164,6 +165,7 @@
 <main>
   <div id="view-exec"></div>
   <div id="view-channel" style="display:none"></div>
+  <div id="view-web" style="display:none"></div>
   <div id="view-comp" style="display:none"></div>
   <div id="view-paid" style="display:none"></div>
   <div id="view-rev" style="display:none"></div>
@@ -1019,6 +1021,66 @@ function renderChannel(b,d,ch){
  el.querySelectorAll("[data-ch]").forEach(btn=>btn.onclick=()=>{state.channel=btn.dataset.ch;render()});
 }
 
+/* ---------- Website tab: audience analytics, sources, top pages, freshness, Lighthouse ---------- */
+const TOP_PAGES={
+ dining:[["/menu",.30],["/reservations",.17],["/events",.12],["/gift-cards",.08],["/about",.06]],
+ hospitality:[["/rooms",.26],["/book",.18],["/things-to-do",.13],["/weddings-events",.09],["/gallery",.07]],
+ realestate:[["/portfolio",.28],["/process",.15],["/remodeling",.12],["/testimonials",.08],["/contact",.10]],
+ marine:[["/slips-storage",.24],["/service",.20],["/boats-for-sale",.16],["/rates",.08],["/contact",.10]],
+ retail:[["/shop",.34],["/new-arrivals",.16],["/sale",.12],["/brands",.08],["/contact",.06]]
+};
+function renderWebsite(b,d){
+ const el=document.getElementById("view-web");
+ const P=period();const B=BENCH[b.seg];
+ const r=rng(hash(b.n+"webtab"+P.days));const mult=(lo,hi)=>lo+r()*(hi-lo);
+ const uv=Math.round(d.web.sessions*mult(.66,.82));
+ const pv=Math.round(d.web.sessions*mult(1.8,3.1));
+ const durS=Math.round(mult(75,255));
+ const dur=Math.floor(durS/60)+"m "+String(durS%60).padStart(2,"0")+"s";
+ const bounce=100-d.web.engRate;
+ const SRC=[["Organic Search","Organic",mult(.24,.40)],["Direct","Direct",mult(.14,.24)],["Paid Search","Paid",mult(.06,.16)],["Paid Social","Paid",mult(.05,.14)],["Organic Social","Organic",mult(.06,.14)],["Email","Owned",mult(.04,.10)],["Referral","Referral",mult(.03,.08)],["AI Assistants","Organic · AI",mult(.005,.02)]];
+ const tot=SRC.reduce((a,x)=>a+x[2],0);
+ const srcRows=SRC.map(x=>({n:x[0],type:x[1],share:x[2]/tot*100,sess:Math.round(d.web.sessions*x[2]/tot)})).sort((a,c)=>c.sess-a.sess);
+ const pages=(TOP_PAGES[b.seg]||TOP_PAGES.dining).map(([p,sh])=>({p,views:Math.round(pv*sh*mult(.85,1.15)),t:Math.round(mult(35,190)),ke:Math.round(d.web.keyEvents*sh*mult(.6,1.6))}));
+ const stale=[
+  ["/events","Past event still listed — 'Summer Kickoff, June 14'","Remove or archive",Math.round(mult(2,6))+" weeks ago"],
+  [(b.seg==="dining"?"/menu":b.seg==="hospitality"?"/rooms":"/services"),"Cornerstone page past the 6-month freshness bar","Refresh copy, photos, and prices","8 months ago"],
+  ["site-wide banner","Winter promo banner still live in July","Swap to the summer campaign","7 months ago"],
+  ["/faq","References pre-2026 policies","Update or redirect","11 months ago"]
+ ].slice(0,2+Math.floor(r()*3));
+ const lh={Performance:d.web.perfScore,Accessibility:Math.round(mult(72,98)),"Best Practices":Math.round(mult(75,100)),SEO:Math.round(mult(70,98))};
+ el.innerHTML=`
+  <div class="grid hero">
+   ${kpi("Unique visitors",fmt(uv),delta(getD(d,"web")),"","People, deduplicated across sessions (GA4)",spark(d.trend.sessions))}
+   ${kpi("Page views",fmt(pv),delta(getD(d,"web")),"","All pages, all sessions",spark(d.trend.sessions))}
+   ${kpi("Session duration",dur,delta(getD(d,"gsc")),"","Average engaged time per session",null)}
+   ${kpi("Bounce rate",pct(bounce,0),delta(-getD(d,"web")),pill(70-bounce,30,"GA4: bounce = no engagement; inverse of engagement rate"),"Left without engaging — lower is better",null)}
+  </div>
+  <div class="grid two" style="margin-top:14px">
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Traffic by type &amp; source <span class="note">GA4 default channel groups</span></h2>
+   <table><thead><tr><th>Source</th><th>Type</th><th>Sessions</th><th>Share</th></tr></thead><tbody>
+   ${srcRows.map(x=>`<tr><td><strong>${x.n}</strong></td><td class="sub2">${x.type}</td><td>${fmt(x.sess)}</td><td>${pct(x.share,0)}</td></tr>`).join("")}
+   </tbody></table>
+   <div class="caption">AI Assistants is small but high-intent — GA4's dedicated channel (May 2026). Paid share above ~35% means rented traffic; grow organic and email to own the audience.</div></div>
+   <div class="card"><h2 style="margin-top:0;font-size:15px">Where sessions come from</h2><div class="chartbox"><canvas id="webSrcChart"></canvas></div></div>
+  </div>
+  <h2>Top pages <span class="note">by views · with engaged time and ${B.result} attributed</span></h2>
+  <div class="card"><table><thead><tr><th>Page</th><th>Views</th><th>Avg engaged time</th><th>${B.result.charAt(0).toUpperCase()+B.result.slice(1)}</th></tr></thead><tbody>
+  ${pages.map(x=>`<tr><td><strong>${x.p}</strong></td><td>${fmt(x.views)}</td><td>${Math.floor(x.t/60)}m ${String(x.t%60).padStart(2,"0")}s</td><td>${fmt(x.ke)}</td></tr>`).join("")}
+  </tbody></table></div>
+  <h2>Outdated content <span class="note">stale pages the weekly crawl flagged — fix before publishing anything new</span></h2>
+  <div class="card"><table><thead><tr><th>Page</th><th>Issue</th><th>Last updated</th><th>Fix</th></tr></thead><tbody>
+  ${stale.map(x=>`<tr><td><strong>${x[0]}</strong></td><td class="sub2">${x[1]}</td><td>${x[3]}</td><td class="sub2">${x[2]}</td></tr>`).join("")}
+  </tbody></table>
+  <div class="caption">Fresh pages hold AI citations and rankings — cited content is measurably fresher (Ahrefs). Full site health, hours sync, and the Business Profile editor live in Channels → Website.</div></div>
+  <h2>Google Lighthouse score <span class="note">lab audit, refreshed weekly · mobile</span></h2>
+  <div class="grid kpis">
+  ${Object.entries(lh).map(([k,v])=>kpi(k,v+"/100","",pill(v,90,"Lighthouse 90+ = good"),v>=90?"Good":v>=75?"Needs improvement":"Poor — fix first",null,true)).join("")}
+  </div>`;
+ destroyCharts();
+ barChart("webSrcChart",srcRows.map(x=>x.n),[{label:"Sessions",data:srcRows.map(x=>x.sess),backgroundColor:"#13416C"}]);
+}
+
 /* ---------- Competitors ---------- */
 function renderComp(b,d){
  const el=document.getElementById("view-comp");
@@ -1146,25 +1208,18 @@ function renderRev(b,d){
    ${kpi("Growth opportunities",grow.length,"","","Demand index ≥ 15 points above revenue index",null,true)}
    ${kpi("Underperforming",under.length,"","","Declining sales, or demand thinning under steady sales",null,true)}
   </div>
-  <div class="grid two" style="margin-top:14px">
-   <div class="card"><h2 style="margin-top:0;font-size:15px">Demand vs revenue, same 0–100 scale — the gap is the opportunity</h2><div class="chartbox"><canvas id="revChart"></canvas></div>
-   <div class="caption">Both bars share one index scale, so they compare honestly. Navy: Revenue Index (share rank 60% + year-over-year growth 40%). Steel: Demand Index (search 25% + web 25% + review mentions 20% + content 15% + hashtags 15%). A steel bar towering over navy = money left on the table; navy over steel = sales coasting on momentum.</div></div>
-   ${adminPanel}
-  </div>
+  <h2>Revenue center detail <span class="note">Opportunity Gap = Demand Index − Revenue Index · month to date — not affected by the global date range</span></h2>
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Center</th><th>Today</th><th>Month to date</th><th>vs last year</th><th>Share</th><th>Demand index</th><th>Revenue index</th><th>Gap</th><th>Status &amp; recommended move</th></tr></thead><tbody>
+  ${rv.rows.map(x=>`<tr><td><strong>${x.c}</strong></td><td>${rv.toast?"$"+fmt(x.today):"—"}</td><td>$${fmt(x.mtd)}</td><td class="${x.yoy>0?"up":"down"}">${x.yoy>0?"+":""}${x.yoy.toFixed(0)}%</td><td>${x.share.toFixed(0)}%</td><td><strong>${x.D}</strong>${sigBar(x)}</td><td>${x.R}</td><td class="${x.gap>=15?"up":x.gap<=-15?"down":"flat"}">${x.gap>0?"+":""}${x.gap}</td><td>${statusPill(x.status)}<div class="sub2" style="margin-top:4px">${rec(x)}</div></td></tr>`).join("")}
+  </tbody></table>
+  <div class="caption">Demand Index = search 25% + web 25% + review mentions 20% + content 15% + hashtags 15% (each 0–100 within the brand). Revenue Index = share rank 60% + year-over-year growth 40%. A demand index towering over revenue = money left on the table; the reverse = sales coasting on momentum.</div></div>
   ${(()=>{const sugg=revSuggestions(b);return sugg.length?`
   <h2>AI-recommended revenue centers to consider <span class="note">not yet tracked — analyzed from demand signals, review themes, and portfolio synergies</span></h2>
   <div class="card"><table><thead><tr><th>Suggested center</th><th>Why this business, why now</th><th>Next step</th></tr></thead><tbody>
   ${sugg.map(([nm,why])=>`<tr><td><strong>${nm}</strong></td><td class="sub2">${why}</td><td class="sub2">Add in Admin view · track demand for one quarter before committing capital</td></tr>`).join("")}
   </tbody></table></div>`:""})()}
-  <h2>Revenue center detail <span class="note">Opportunity Gap = Demand Index − Revenue Index · month to date — not affected by the global date range</span></h2>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Center</th><th>Today</th><th>Month to date</th><th>vs last year</th><th>Share</th><th>Demand index</th><th>Revenue index</th><th>Gap</th><th>Status &amp; recommended move</th></tr></thead><tbody>
-  ${rv.rows.map(x=>`<tr><td><strong>${x.c}</strong></td><td>${rv.toast?"$"+fmt(x.today):"—"}</td><td>$${fmt(x.mtd)}</td><td class="${x.yoy>0?"up":"down"}">${x.yoy>0?"+":""}${x.yoy.toFixed(0)}%</td><td>${x.share.toFixed(0)}%</td><td><strong>${x.D}</strong>${sigBar(x)}</td><td>${x.R}</td><td class="${x.gap>=15?"up":x.gap<=-15?"down":"flat"}">${x.gap>0?"+":""}${x.gap}</td><td>${statusPill(x.status)}<div class="sub2" style="margin-top:4px">${rec(x)}</div></td></tr>`).join("")}
-  </tbody></table></div>`;
+  <div style="margin-top:14px">${adminPanel}</div>`;
  destroyCharts();
- barChart("revChart",rv.rows.map(x=>x.c),[
-  {label:"Revenue index (0–100)",data:rv.rows.map(x=>x.R),backgroundColor:"#13416C"},
-  {label:"Demand index (0–100)",data:rv.rows.map(x=>x.D),backgroundColor:"#6E8CAD"}
- ]);
  if(state.mode==="admin"){
   el.querySelectorAll("[data-rmc]").forEach(btn=>btn.onclick=()=>{revCenters(b).splice(+btn.dataset.rmc,1);render()});
   const add=()=>{const v=el.querySelector("#newCenter").value.trim();if(v){revCenters(b).push(v);render()}};
@@ -1392,16 +1447,17 @@ const decState={};function d0k(x){return x.d.slice(0,40)}
 function render(){
  const ri=document.getElementById("rangeInfo");if(ri)ri.textContent=rangeText();
  if(!state.brand){
-  ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+  ["exec","channel","web","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
   destroyCharts();renderLanding(document.getElementById("view-"+state.view));return;
  }
  const b=state.brand,d=brandData(b);
- ["exec","channel","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
+ ["exec","channel","web","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
  if(state.view==="exec"){renderExec(b,d);
   document.querySelectorAll("[data-deca]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].a=sel2.value});
   document.querySelectorAll("[data-decs]").forEach(sel2=>sel2.onchange=()=>{const k=sel2.closest("tr").querySelector("strong").textContent.slice(0,40);decState[k]=decState[k]||{};decState[k].s=sel2.value});
  }
  if(state.view==="channel")renderChannel(b,d,state.channel);
+ if(state.view==="web")renderWebsite(b,d);
  if(state.view==="comp")renderComp(b,d);
  if(state.view==="paid")renderPaid(b,d);
  if(state.view==="rev")renderRev(b,d);
