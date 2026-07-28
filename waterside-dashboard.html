@@ -153,14 +153,14 @@
   </div>
 </header>
 <nav>
-  <button class="active" data-view="exec">Scorecard</button>
-  <button data-view="channel">Channels</button>
+  <button class="active" data-view="exec">Home</button>
+  <button data-view="channel">Socials</button>
+  <button data-view="paid">Paid Socials</button>
   <button data-view="web">Website</button>
   <button data-view="comp">Competitors</button>
-  <button data-view="paid">Paid Campaigns</button>
-  <button data-view="rev">Revenue Centers</button>
-  <button data-view="demo">Demographics</button>
-  <button data-view="ai">Insights &amp; Advice</button>
+  <button data-view="rev">Revenue</button>
+  <button data-view="demo">Customers</button>
+  <button data-view="ai">Insights</button>
 </nav>
 <main>
   <div id="view-exec"></div>
@@ -1142,7 +1142,7 @@ function renderPaid(b,d){
  const objCards=Object.entries(byObj).filter(([o])=>o!=="Awareness").slice(0,2).map(([o,v])=>
   kpi("Cost per "+v.unit.replace(/s$/,""),"$"+(v.spend/Math.max(1,v.results)).toFixed(0),"","",fmt(v.results)+" "+v.unit+" · $"+fmt(v.spend)+" spend · "+o+" campaigns only",null,true)).join("");
  const aw=byObj["Awareness"];
- const rows=tableCams.map(c=>{
+ const platRows=(list)=>list.map(c=>{
   const spentPct=c.spent/c.budget*100, elPct=c.elapsed/c.flightDays*100;
   const pace=elPct>0?spentPct/elPct:1;
   const paceCls=Math.abs(pace-1)<=0.05?"above":Math.abs(pace-1)<=0.15?"at":"below";
@@ -1163,6 +1163,28 @@ function renderPaid(b,d){
    <td>${pct(c.ctr,1)}</td>
    <td>${flags.join(" ")}</td></tr>`;
  }).join("");
+ /* platform split — Google and Meta buy differently, pace differently, and report on different rulers */
+ const PLATS=[["Meta","Facebook &amp; Instagram — Meta Ads Manager"],["Google","Search, Performance Max &amp; YouTube — Google Ads"],["TikTok","TikTok Ads Manager"]];
+ const byPlat=PLATS.map(([p,sub])=>{
+  const list=tableCams.filter(c=>c.plat===p);
+  const all=cams.filter(c=>c.plat===p);
+  const spend=all.reduce((a,c)=>a+c.spent,0), budget=all.reduce((a,c)=>a+c.budget,0);
+  const perf=all.filter(c=>c.obj!=="Awareness");
+  const res=perf.reduce((a,c)=>a+c.results,0), pspend=perf.reduce((a,c)=>a+c.spent,0);
+  const issues=all.filter(c=>{const pp=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(pp-1)>0.15||c.freq>=3.5}).length;
+  const ctr=all.length?all.reduce((a,c)=>a+c.ctr,0)/all.length:0;
+  return {p,sub,list,all,spend,budget,res,pspend,issues,ctr,unit:perf[0]?perf[0].unit:"results"};
+ }).filter(x=>x.all.length);
+ const platBlock=byPlat.map(x=>`
+  <h2>${x.p} <span class="note">${x.sub} · ${x.all.length} campaign${x.all.length>1?"s":""}</span></h2>
+  <div class="grid hero">
+   ${kpi(x.p+" spend","$"+fmt(x.spend),"","","of $"+fmt(x.budget)+" budgeted this flight",null,true)}
+   ${kpi("Cost per "+x.unit.replace(/s$/,""),x.res?"$"+(x.pspend/x.res).toFixed(0):"—","","",x.res?fmt(x.res)+" "+x.unit+" from performance campaigns":"awareness only — judged on reach",null,true)}
+   ${kpi("Click rate",pct(x.ctr,1),"",pill(x.ctr,x.p==="Google"?BENCH[b.seg].gadsCTR:BENCH[b.seg].metaCTR,x.p+" industry median"),"vs "+SEGLABEL[b.seg]+" median",null,true)}
+   ${kpi("Needs attention",x.issues,"",x.issues?'<span class="pill below">Act</span>':'<span class="pill above">OK</span>',"Pacing off ±15%"+(x.p==="Meta"?" or creative fatigued":""),null,true)}
+  </div>
+  <div class="card" style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Campaign</th><th>Goal</th><th>Flight</th><th>Budget</th><th>Spent</th><th>Results</th><th>Cost / result</th><th>Click rate</th><th>Health</th></tr></thead><tbody>${platRows(x.list)}</tbody></table>
+  <div class="caption">${x.p==="Google"?"Google can spend up to 2x a daily budget in one day but never more than 30.4x per month — pace monthly, not daily. Conversions counted on Google's own attribution.":x.p==="Meta"?"Meta averages daily budgets across the week (up to +75% on a strong day) and reports on 7-day click / 1-day view — a 10–20% gap vs GA4 is structural, not an error. Frequency at ~3.5 is the creative-refresh signal.":"TikTok reports on its own attribution window; treat results as directional against the others."}</div></div>`).join("");
  el.innerHTML=`
   <div class="grid hero">
    ${kpi("Spend this period","$"+fmt(totSpend),delta(getD(d,"paid")),"","of $"+fmt(totBudget)+" budgeted",null,true)}
@@ -1171,9 +1193,8 @@ function renderPaid(b,d){
    ${kpi("Needs attention",cams.filter(c=>{const p=(c.spent/c.budget)/(c.elapsed/c.flightDays||1);return Math.abs(p-1)>0.15||c.freq>=3.5}).length,"","","Pacing off ±15% or creative fatigued",null,true)}
   </div>
   <div class="caption" style="margin-top:6px">Costs are reported per objective only — a lead, a booking, and a purchase never share a "blended" cost, and awareness spend is shown separately with reach.</div>
-  <h2>Campaigns <span class="note">${agg?"portfolio: every company's campaigns aggregated — top 15 of "+allCount+" by spend shown · ":""}results speak each campaign's language — flights are absolute; spend shown is flight-to-date</span></h2>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>Campaign</th><th>Goal</th><th>Flight</th><th>Budget</th><th>Spent</th><th>Results</th><th>Cost / result</th><th>Click rate</th><th>Health</th></tr></thead><tbody>${rows}</tbody></table>
-  <div class="caption"><strong>Pacing</strong> = share of budget spent ÷ share of flight elapsed; on pace ±5%, watch 5–15%, act beyond 15% — underspend flagged too. Google can spend 2x a daily budget in one day but never over 30.4x per month — pace monthly. Meta averages daily budgets across the week. <strong>Creative fatigue:</strong> at ~3.5 exposures clicks fade (Meta research: conversion likelihood drops ~45% by the 4th view). <strong>Attribution:</strong> Meta (7-day click/1-day view) and GA4 (data-driven) use different rulers; 10–20% variance is structural — never sum across platforms.</div></div>`;
+  ${platBlock}
+  <div class="caption" style="margin-top:14px"><strong>Why platforms are kept apart:</strong> Google and Meta buy, pace, and count differently — Meta reports 7-day click / 1-day view, Google uses its own attribution, and GA4 a third ruler. A 10–20% gap between them is structural, not an error, so results are never summed across platforms. <strong>Pacing</strong> = share of budget spent ÷ share of flight elapsed; on pace ±5%, watch 5–15%, act beyond 15% — underspend is flagged too.${agg?" Portfolio view: every company's campaigns aggregated, top 15 by spend shown per platform.":""}</div>`;
  destroyCharts();
 }
 
