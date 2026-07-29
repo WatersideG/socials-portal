@@ -83,6 +83,15 @@
   details summary{cursor:pointer;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);font-family:'Nord-Book','Jost',sans-serif}
   details .inner{padding:4px 18px 16px}
   .lbgrid{grid-template-columns:repeat(auto-fill,minmax(268px,1fr))}
+  .intelgrid{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+  .intel{border-left:3px solid var(--steel)}
+  .intel-task{margin-top:10px;padding-top:9px;border-top:1px solid #eef1f4;font-size:12.5px;color:var(--ink);line-height:1.5}
+  .qstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:16px}
+  .qstrip a{background:#fff;padding:11px 12px;text-decoration:none;display:block}
+  .qstrip a:hover{background:var(--steel-soft)}
+  .qstrip .q{font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700}
+  .qstrip .a{font-size:12.5px;color:var(--navy);font-weight:600;margin-top:4px;line-height:1.35}
+  @media(max-width:640px){.qstrip{grid-template-columns:1fr 1fr}.qstrip .q{font-size:8.5px;letter-spacing:.6px}.qstrip .a{font-size:11px}}
   .lbcard table td{border-bottom:1px solid #f4f6f8}
   .lbcard table tr:last-child td{border-bottom:none}
   .logo-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
@@ -649,26 +658,39 @@ function renderLanding(el){
    <div class="srctag" title="Ranked across all ${LB.length} businesses">${c.src} · <span class="pill sample">SAMPLE</span></div>
    <div class="caption" style="margin-top:6px;font-size:10.5px">${c.note}</div></div>`;
  };
+ const totalIssues=flags.length, urgent=flags.filter(x=>x.d.local.unanswered>2||x.d.local.rating<4.3).length;
+ const topPerf=top[0], avgOut=scored.reduce((a,x)=>a+getD(x.d,"outcome"),0)/scored.length;
+ const teamAvg=Math.round(scored.reduce((a,x)=>a+teamData(x.b,x.d).pubPct,0)/scored.length);
  el.innerHTML=`
-  <h2 style="margin-top:0">Best performing businesses <span class="note">${cmpLabel().replace("vs ","ranked vs ")} · outcomes growth + conversion + engagement vs each segment's benchmarks</span></h2>
+  <div class="qstrip">
+   <a href="#q1"><div class="q">How are we doing</div><div class="a">${avgOut>=0?"+":""}${avgOut.toFixed(0)}% outcomes across ${scored.length} businesses</div></a>
+   <a href="#q1"><div class="q">What's working</div><div class="a">${topPerf.b.n}</div></a>
+   <a href="#q3"><div class="q">Needs attention</div><div class="a">${totalIssues} business${totalIssues===1?"":"es"} ${totalIssues?'<span class="pill at">Review</span>':'<span class="pill above">Clear</span>'}</div></a>
+   <a href="#q4"><div class="q">Urgent tasks</div><div class="a">${urgent?urgent+" needing action today":"None today"}</div></a>
+   <a href="#q5"><div class="q">Team performing</div><div class="a">${teamAvg}% of publishing plan</div></a>
+   <a href="#q6"><div class="q">Intelligence</div><div class="a">${intelFor(null,99).filter(x=>(Date.now()-new Date(x.d))/864e5<45).length} new this month</div></a>
+  </div>
+  <h2 id="q1" style="margin-top:0">Best performing businesses <span class="note">${cmpLabel().replace("vs ","ranked vs ")} · outcomes growth + conversion + engagement vs each segment's benchmarks</span></h2>
   <div class="logo-grid">
   ${top.map(x=>`<button class="logo-card" data-open="${x.b.n}" aria-label="Open ${x.b.n}">${logoImg(x.b.n,64)}<span class="logo-name">${x.b.n}</span><span class="delta ${getD(x.d,"outcome")>=0?"up":"down"}" style="font-size:11.5px">${getD(x.d,"outcome")>=0?"+":""}${getD(x.d,"outcome").toFixed(0)}% ${BENCH[x.b.seg].result}</span></button>`).join("")}
   </div>
-  <h2>Needs attention <span class="note">worst signals first — open the business to act</span></h2>
+  <h2 id="q3">Needs attention <span class="note">worst signals first — open the business to act</span></h2>
   <div class="card">${flags.length?`<table><thead><tr><th>Business</th><th>What's wrong</th><th>Rating</th><th>${cmpLabel().includes("last year")?"Outcomes YoY":"Outcomes"}</th><th></th></tr></thead><tbody>
    ${flags.map(x=>`<tr><td><strong>${x.b.n}</strong></td><td class="sub2">${x.why.join(" · ")}</td><td>${x.d.local.rating.toFixed(1)}★</td><td class="${getD(x.d,"outcome")>=0?"up":"down"}">${getD(x.d,"outcome")>=0?"+":""}${getD(x.d,"outcome").toFixed(0)}%</td><td><a href="#" data-open="${x.b.n}" style="color:var(--steel);font-size:11px;letter-spacing:1px;text-transform:uppercase">Open →</a></td></tr>`).join("")}
    </tbody></table>`:'<p style="font-size:13px">No business is flagged this period — outcomes, reviews, and search demand are all holding.</p>'}</div>
-  <h2>Tasks <span class="note">generated from the flags above · assign and track</span></h2>
+  <h2 id="q4">Tasks <span class="note">every view feeds this queue — reviews, campaigns, content, revenue gaps, and intelligence · assign and track</span></h2>
   <div class="card"><table><thead><tr><th>Task</th><th>Business</th><th>Assignee</th><th>Due</th><th>Why it matters</th><th>Status</th></tr></thead><tbody>
   ${tasks.slice(0,6).map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td class="sub2">${x.b}</td><td><select data-tka="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM","Marketing lead"].map(o=>`<option ${taskState[i]&&taskState[i].a===o?"selected":""}>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-tks="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option ${taskState[i]&&taskState[i].s===o?"selected":""}>${o}</option>`).join("")}</select></td></tr>`).join("")}
   </tbody></table><div class="caption">Assignments persist for this session; production stores them with an audit trail and measures each task's result after 30 days.</div></div>
-  <h2>Leaderboard <span class="note">top 5 of ${LB.length} businesses per metric · ${cmpLabel()} · click any name to open it</span></h2>
+  <h2 id="q5">Leaderboard <span class="note">top 5 of ${LB.length} businesses per metric · ${cmpLabel()} · click any name to open it</span></h2>
   <div class="grid lbgrid">${CARDS.map(lbCard).join("")}</div>
   <details><summary>Full ranking, all businesses</summary><div class="inner" style="overflow-x:auto">
   <table><thead><tr><th>Business</th><th>Segment</th><th>Sales</th><th>Leads</th><th>New subs</th><th>Audience</th><th>Traffic</th><th>AI share</th><th>Search share</th><th>Likes &amp; shares</th><th>Eng. rate</th></tr></thead><tbody>
   ${[...LB].sort((a,x)=>x.sales-a.sales).map(x=>`<tr><td><a href="#" data-open="${x.n}" style="color:inherit;font-weight:600">${x.n}</a></td><td class="sub2">${SEGLABEL[x.seg]}</td><td>$${fmt(x.sales)}</td><td>${fmt(x.leads)}</td><td>${fmt(x.subs)}</td><td>${fmt(x.aud)}</td><td>${fmt(x.traffic)}</td><td>${pct(x.ai,1)}</td><td>${pct(x.search,0)}</td><td>${fmt(x.ls)}</td><td>${pct(x.er,0)}</td></tr>`).join("")}
   </tbody></table>
   <div class="caption">Engagement rate is indexed to each segment's median so a restaurant competes with restaurant norms, not a builder's — 100% means exactly at median. Sales are month-to-date and not affected by the global date range until live P&L feeds connect.</div></div></details>
+  <h2 id="q6">This month's marketing intelligence <span class="note">cumulative learning from Search Engine Land, Search Engine Journal, Moz, Semrush, Google Search Central, Pew Research, Nielsen, and Google Trends — each with what it means for us and a task</span></h2>
+  <div class="grid intelgrid">${intelFor(null,6).map(intelCard).join("")}</div>
   <p class="caption">Choose a business above or from the dropdown for its full scorecard, socials, reviews, campaigns, revenue, customers, and advice.</p>`;
  el.querySelectorAll("[data-open]").forEach(x=>x.onclick=(e)=>{e.preventDefault();const nm=x.dataset.open;sel.value=nm;state.brand=BRANDS.find(y=>y.n===nm);render()});
  el.querySelectorAll("[data-tka]").forEach(x=>x.onchange=()=>{const i=+x.dataset.tka;taskState[i]=taskState[i]||{};taskState[i].a=x.value});
@@ -771,7 +793,20 @@ function renderExec(b,d){
  const el=document.getElementById("view-exec");
  const P=period();
  el.innerHTML=`
-  <div class="tldr">${tldr(b,d)}</div>
+  ${(()=>{const T=teamData(b,d),B2=BENCH[b.seg];
+   const issues=(d.local.unanswered>2?1:0)+(d.local.rating<4.4?1:0)+(getD(d,"outcome")<0?1:0)+(paidIssues(b)>0?1:0)+(d.aio.cited<4?1:0);
+   const st=(ok,warn)=>ok?'<span class="pill above">Good</span>':warn?'<span class="pill at">Watch</span>':'<span class="pill below">Act</span>';
+   const best=[["Instagram",d.er.ig/B2.igER],["TikTok",d.er.tt/B2.ttER],["Email",d.ctr.email/B2.emailClick]].sort((a,c)=>c[1]-a[1])[0];
+   const topC=contentRows(b,d)[0];
+   return `<div class="qstrip">
+    <a href="#q1"><div class="q">How are we doing</div><div class="a">${getD(d,"outcome")>=0?"+":""}${getD(d,"outcome").toFixed(0)}% ${B2.result} ${st(getD(d,"outcome")>=0,getD(d,"outcome")>-5)}</div></a>
+    <a href="#q2"><div class="q">What's working</div><div class="a">${best[0]} ${best[1]>=1?"beats":"nears"} median</div></a>
+    <a href="#q3"><div class="q">Needs attention</div><div class="a">${issues} item${issues===1?"":"s"} ${st(issues===0,issues<3)}</div></a>
+    <a href="#q4"><div class="q">Urgent tasks</div><div class="a">${d.local.unanswered>2?"Reviews waiting":issues?"See task list":"None today"}</div></a>
+    <a href="#q5"><div class="q">Team performing</div><div class="a">${T.pubPct}% of plan ${st(T.pubPct>=85,T.pubPct>=65)}</div></a>
+    <a href="#q6"><div class="q">Content resonating</div><div class="a">${topC.fmt} · ${topC.verdict[0]}</div></a>
+   </div>`})()}
+  <div class="tldr" id="q1">${tldr(b,d)}</div>
   <div class="algoweather">${ALGO_WEATHER}</div>
   <div class="grid hero">
    ${kpi("Seen — visibility",fmt(d.gsc.impr),delta(getD(d,"gsc")),"","Search appearances. AI mentions tracked separately: "+fmt(d.aio.mention),spark(d.trend.gscImpr))}
@@ -790,6 +825,31 @@ function renderExec(b,d){
     <div class="caption">Google answers many questions on its own page now. Being seen still builds the brand even when clicks lag. AI-assistant visits are few but high-intent — see Channels → Search &amp; AI.</div></div>
     <div class="card"><h2 style="margin-top:0;font-size:15px">What matters this period</h2>${execInsights(b,d).map(i=>`<div class="insight ${i.cls}"><span class="tag">${i.tag}</span><h3>${i.h}</h3><p>${i.p}</p><div class="ev">${i.ev}</div></div>`).join("")}</div>
   </div>
+  ${(()=>{const T=teamData(b,d),K=SEGKPI[b.seg]||SEGKPI.portfolio,B2=BENCH[b.seg];
+   const wins=[];
+   if(getD(d,"outcome")>0)wins.push(`${B2.result} up ${getD(d,"outcome").toFixed(0)}% — ${K.primary.toLowerCase()} growing`);
+   if(d.er.ig>B2.igER)wins.push(`Instagram engagement ${pct(d.er.ig)} beats the ${SEGLABEL[b.seg].toLowerCase()} median of ${pct(B2.igER)}`);
+   if(d.er.tt>B2.ttER)wins.push(`TikTok engagement ${pct(d.er.tt)} above median — the platform returning most per post`);
+   if(d.local.rating>=4.4)wins.push(`${d.local.rating.toFixed(1)}★ clears the 4.4★ AI-discovery threshold`);
+   if(d.ctr.email>B2.emailClick)wins.push(`Email clicks ${pct(d.ctr.email)} beat the ${pct(B2.emailClick)} industry median`);
+   if(T.pubPct>=90)wins.push(`Publishing at ${T.pubPct}% of the ${SEGLABEL[b.seg].toLowerCase()} plan`);
+   if(!wins.length)wins.push("No metric is beating its segment median this period — the tasks below are where to start");
+   const content=contentRows(b,d).slice(0,3);
+   return `<h2 id="q2">What's working <span class="note">wins to repeat — measured against ${SEGLABEL[b.seg].toLowerCase()} norms</span></h2>
+   <div class="card"><ul style="list-style:none">${wins.slice(0,4).map(x=>`<li style="padding:8px 0;border-bottom:1px solid #eef1f4;font-size:13px"><span class="pill above">Working</span> ${x}</li>`).join("")}</ul></div>
+   <h2 id="q6">What content is resonating <span class="note">top pieces this period · repeat / adapt / stop</span></h2>
+   <div class="card"><table><thead><tr><th>Format</th><th>Content</th><th>Reach</th><th>vs brand norm</th><th>Verdict</th></tr></thead><tbody>
+   ${content.map(x=>`<tr><td>${x.fmt}</td><td>${x.txt}</td><td>${fmt(x.reach)}</td><td class="${x.vsNorm>=0?"up":"down"}">${x.vsNorm>=0?"+":""}${x.vsNorm.toFixed(0)}%</td><td><span class="pill ${x.verdict[1]}">${x.verdict[0]}</span></td></tr>`).join("")}
+   </tbody></table><div class="caption">Full content table with organic-vs-boosted and coverage gaps is under Socials. Production links each row to the original post.</div></div>
+   <h2 id="q5">Is the team performing <span class="note">output and responsiveness against this segment's plan</span></h2>
+   <div class="grid kpis">
+    ${kpi("Publishing vs plan",T.pubPct+"%","",pill(T.pubPct,85,"Segment target: "+T.target+" posts this period"),T.posts+" of "+T.target+" posts",null,true)}
+    ${kpi("Stories vs plan",T.storyPct+"%","",pill(T.storyPct,85,"Segment target"),T.stories+" of "+T.storyTarget+" frames",null,true)}
+    ${kpi("Review response rate",pct(T.respRate,0),"",pill(T.respRate,80,"80% practitioner target"),"Median reply "+T.respHrs+"h vs 24h SLA",null,true)}
+    ${kpi("Response within SLA",T.respHrs<=24?"Yes":"No","",T.respHrs<=24?'<span class="pill above">Within 24h</span>':'<span class="pill below">Over 24h</span>',"Median "+T.respHrs+" hours",null,true)}
+    ${kpi("Task completion",T.taskDone+"%","",pill(T.taskDone,70,"Target 70%"),"Assigned tasks closed on time",null,true)}
+    ${kpi("Content output",T.blog+" posts / "+T.emails+" emails","",pill((T.blog/T.blogTarget)*100,80,"Plan: "+T.blogTarget+" blog, "+T.emailTarget+" email"),"Blog and email vs plan",null,true)}
+   </div>`})()}
   ${(()=>{const t=[];
     if(d.local.unanswered>2)t.push({t:`Reply to ≈${d.local.unanswered} estimated unanswered reviews (median response ${d.local.respHrs}h)`,o:"Location mgr",due:"Today",imp:"Protects local ranking + AI discovery"});
     if(d.local.rating<4.4)t.push({t:`Lift rating from ${d.local.rating.toFixed(1)}★ toward 4.4★ — invite recent happy guests`,o:"Location mgr",due:"This month",imp:"Below 4.4★ AI recommendations pass us over"});
@@ -798,9 +858,9 @@ function renderExec(b,d){
     if(paidIssues(b)>0)t.push({t:`Fix ${paidIssues(b)} paid campaign${paidIssues(b)>1?"s":""} — pacing or fatigued creative`,o:"Paid media",due:"This week",imp:"Stop wasted spend"});
     if(d.ctr.email<BENCH[b.seg].emailClick)t.push({t:"Rework email: segment the list and rewrite subject lines",o:"Marketing lead",due:"2 weeks",imp:"Clicks trail the industry median"});
     const flagged=t.length;
-    return `<h2>Needs attention <span class="note">${flagged?flagged+" open item"+(flagged>1?"s":""):"nothing flagged this period"}</span></h2>
+    return `<h2 id="q3">Needs attention <span class="note">${flagged?flagged+" open item"+(flagged>1?"s":""):"nothing flagged this period"}</span></h2>
     <div class="card">${flagged?`<table><thead><tr><th>Issue</th><th>Owner</th><th>Due</th><th>Why it matters</th><th>Status</th></tr></thead><tbody>
-    ${t.map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td><select data-bta="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM"].map(o=>`<option>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-bts="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option>${o}</option>`).join("")}</select></td></tr>`).join("")}
+    ${t.map((x,i)=>`<tr><td><strong>${x.t}</strong></td><td id="${i===0?"q4":""}"><select data-bta="${i}" aria-label="Assignee" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Unassigned",x.o,"GM"].map(o=>`<option>${o}</option>`).join("")}</select></td><td>${x.due}</td><td class="sub2">${x.imp}</td><td><select data-bts="${i}" aria-label="Status" style="border:1px solid var(--line);padding:4px;font-family:inherit;font-size:11px">${["Open","Accepted","In progress","Done"].map(o=>`<option>${o}</option>`).join("")}</select></td></tr>`).join("")}
     </tbody></table>`:'<p style="font-size:13px">Reviews, outcomes, campaigns, email, and AI visibility are all holding this period. Keep the cadence.</p>'}</div>`})()}
   <details><summary>All channels scoreboard</summary><div class="inner">
   <table><thead><tr><th>Channel</th><th>Audience</th><th>Change</th><th>Output</th><th>Engagement</th><th>Industry median</th><th>Standing</th></tr></thead><tbody>
@@ -819,6 +879,9 @@ function renderExec(b,d){
     ${kpi("Branded searches",pct(d.gsc.branded,0),delta(getD(d,"gsc")),"","Share of Google queries that are our name",null,true)}
     ${kpi("Site performance",d.web.perfScore+"/100","",pill(d.web.perfScore,75,"Lighthouse passing threshold"),"Speed + engagement + conversion",null,true)}
   </div></div></details>
+  <h2>Marketing intelligence <span class="note">what changed in the industry, what it means here, and what to do — learning daily from Search Engine Land, Search Engine Journal, Moz, Semrush, Google Search Central, Pew Research, Nielsen, and Google Trends</span></h2>
+  <div class="grid intelgrid">${intelFor(b,3).map(intelCard).join("")}</div>
+  <p class="caption">Full feed under Insights. Tasks from these cards join the same queue as everything else.</p>
   ${dataStatus(d)}`;
  destroyCharts();
  lineChart("execTrend",P.labels,[
@@ -1121,6 +1184,123 @@ function renderChannel(b,d,ch){
  }
  el.querySelectorAll("[data-ch]").forEach(btn=>btn.onclick=()=>{state.channel=btn.dataset.ch;render()});
 }
+
+/* ---------- Marketing Intelligence: cumulative feed from the industry sources ----------
+   Each card: finding (with the number) → what it means here → task → source + date → segments.
+   Production: daily RSS pull from Search Engine Land, Search Engine Journal, Moz, Semrush,
+   Google Search Central + /search/news, Pew Research, Nielsen, and Google Trends; an LLM
+   classifies and drafts; a human approves before publication. Framework in the integration guide. */
+const INTEL=[
+ {d:"2026-06-15",src:"Google Search Central",t:"Search Console now reports AI-feature impressions separately",
+  f:"Google added a Generative AI performance report, initially rolling out to a subset of properties.",
+  w:"We can finally separate 'seen inside an AI answer' from classic search — the two behave nothing alike.",
+  task:"Check whether each property has the report yet; wire AI-feature impressions into the visibility tile.",seg:"all"},
+ {d:"2026-05-21",src:"Search Engine Land",t:"May 2026 core update ran May 21 – June 2",
+  f:"Google's second core update of 2026 followed March's (Mar 27–Apr 8); travel and local results moved notably.",
+  w:"Traffic swings inside those windows were industry-wide, not our doing — and not a reason to change strategy.",
+  task:"Judge any SEO win or loss outside the marked update windows on the traffic charts.",seg:"all"},
+ {d:"2026-05-10",src:"Google Analytics",t:"GA4 added an 'AI Assistant' traffic channel",
+  f:"Visits arriving from AI assistants are now separated in GA4's default channel groups.",
+  w:"Small volume, but this traffic converts far better than average — it's people who already got a recommendation.",
+  task:"Track AI-assistant sessions and their conversion rate as its own row; report it monthly.",seg:"all"},
+ {d:"2026-04-02",src:"Google Maps content policy",t:"Review solicitation rules tightened",
+  f:"Staff review quotas and asking guests to name employees are prohibited; incentivized and fake reviews remain banned.",
+  w:"Our ask-for-review habit is fine — the scripts around it may not be.",
+  task:"Remove any staff quota or 'mention your server' language from review request scripts and signage.",seg:"all"},
+ {d:"2026-05-05",src:"Search Engine Journal",t:"FAQ rich results fully retired",
+  f:"Google removed FAQ rich results from search entirely — the feature is gone by design.",
+  w:"Any KPI counting FAQ appearances now reads zero; that's Google's change, not a failure of ours.",
+  task:"Keep the FAQ schema for AI parsing, but stop reporting FAQ rich-result impressions.",seg:"all"},
+ {d:"2026-03-18",src:"Ahrefs research",t:"Impressions and clicks have decoupled",
+  f:"The impressions-to-clicks correlation flipped from +0.43 to −0.35; roughly 68% of searches now end without a click.",
+  w:"Being seen more while clicks stay flat is the new normal — visibility still builds the brand.",
+  task:"Report visibility and visits as two separate lines; stop treating flat clicks as failure.",seg:"all"},
+ {d:"2026-02-20",src:"Seer Interactive",t:"Being cited in an AI answer lifts clicks ~35%",
+  f:"Brands cited inside AI Overviews earned about 35% more organic clicks than uncited brands on the same queries.",
+  w:"Citation, not ranking, is becoming the thing worth optimizing for in our categories.",
+  task:"Publish two answer-format pages this month — a neighborhood guide and a seasonal itinerary, with a named local author.",seg:"all"},
+ {d:"2026-01-15",src:"Whitespark Local Search Ranking Factors",t:"Business Profile signals are ~32% of local ranking",
+  f:"Profile signals weigh ~32% and reviews ~20%; primary category is the single strongest factor and 'open now' ranks top-5.",
+  w:"For our locations the Business Profile matters more than the website for discovery.",
+  task:"Audit every location's primary category, holiday hours, and photo freshness this week.",seg:"all"},
+ {d:"2026-03-01",src:"Rival IQ / Quid benchmarks",t:"TikTok still out-engages every other platform",
+  f:"Median engagement per post: TikTok 2.01%, Instagram 0.30%, YouTube 0.21%, Facebook near flat.",
+  w:"Effort on TikTok returns several times what the same effort returns on Facebook.",
+  task:"Shift one weekly production slot from Facebook-first to TikTok-first content.",seg:"all"},
+ {d:"2026-02-08",src:"Buffer / Rival IQ",t:"Carousels beat Reels in most industries",
+  f:"Across 52M posts, carousels earned materially more engagement than Reels in most verticals.",
+  w:"Our best photos don't have to become video to perform — sequencing them works.",
+  task:"Turn this month's best photo set into a 6–10 frame carousel with a story order.",seg:"all"},
+ {d:"2026-01-28",src:"Socialinsider Stories study",t:"Stories lose a quarter of viewers on frame one",
+  f:"23.8% of viewers exit after the first frame, but reach peaks between frames 6 and 13.",
+  w:"Short Story sets leave reach unused; the opening frame is doing all the work.",
+  task:"Run 8+ frame Story sets and open with motion or a question sticker, not a logo.",seg:"all"},
+ {d:"2026-04-12",src:"Retention Rabbit",t:"Retention drives YouTube reach more than anything else",
+  f:"Improving average retention by 10 points correlated with about 25% more algorithmic impressions.",
+  w:"A shorter, tighter video beats a longer thorough one for reach.",
+  task:"Re-cut the last three videos to front-load the payoff inside the first 20 seconds.",seg:"all"},
+ {d:"2026-03-22",src:"Pluspoint AI-discovery analysis",t:"4.4★ is the practical AI-recommendation threshold",
+  f:"Below roughly 4.4 stars, AI-driven recommendation engines increasingly pass a business over; above it, review volume decides.",
+  w:"Rating is now a discovery gate, not just a trust signal.",
+  task:"Any location under 4.4★ gets a weekly review push and same-day responses until it clears.",seg:"all"},
+ {d:"2026-02-14",src:"MailerLite benchmarks",t:"Email opens are unreliable; clicks are not",
+  f:"Apple's privacy protection inflates open rates 15–35%; restaurant click rates run ~1.06% and travel opens are the lowest of any industry.",
+  w:"Judging email by opens flatters us and hides the real problem.",
+  task:"Rebuild email reporting around clicks, conversions, and revenue per send; stop segmenting on opens.",seg:"all"},
+ {d:"2026-06-01",src:"Google Trends",t:"Foliage planning searches start rising in late July",
+  f:"New England foliage and fall-getaway queries begin climbing in late July and peak through September.",
+  w:"The booking decision for October happens in August — content published in September is late.",
+  task:"Publish fall itinerary and event content now, and open fall bookings before Labor Day.",seg:"hospitality"},
+ {d:"2026-06-05",src:"Google Trends",t:"'Restaurants near me' peaks Thursday–Saturday evening",
+  f:"Local dining searches concentrate Thursday through Saturday, with mobile share highest after 4pm.",
+  w:"Our specials post Monday morning when nobody is deciding where to eat.",
+  task:"Move weekly specials and event posts to Thursday afternoon; keep hours accurate for weekend searches.",seg:"dining"},
+ {d:"2026-05-18",src:"Search Engine Land local",t:"AI answers source dining and lodging from third parties",
+  f:"AI engines build restaurant and hotel recommendations largely from Reddit, Google Maps, and OpenTable — rarely from brand sites.",
+  w:"Our own website is not where the recommendation gets made.",
+  task:"Monitor and participate in local Reddit and best-of list conversations; get listed where AI actually looks.",seg:"all"},
+ {d:"2026-04-25",src:"Semrush blog",t:"Freshness is now a citation factor",
+  f:"Content cited by AI engines is measurably fresher than the average ranking page.",
+  w:"Our cornerstone pages age out of citations quietly, without ranking drops to warn us.",
+  task:"Refresh every cornerstone page older than six months — menus, room pages, service pages, guides.",seg:"all"}
+];
+function intelFor(b,n){
+ const seg=b?b.seg:"all";
+ return INTEL.filter(x=>x.seg==="all"||x.seg===seg).sort((a,c)=>c.d.localeCompare(a.d)).slice(0,n||INTEL.length);
+}
+function intelCard(x){
+ const age=Math.round((Date.now()-new Date(x.d))/864e5);
+ return `<div class="card intel"><div class="srctag" style="margin:0 0 8px;padding:0;border:none">${x.src} · ${new Date(x.d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}${age<45?' <span class="pill above">New</span>':""}</div>
+  <h3 style="font-size:14px;margin-bottom:6px">${x.t}</h3>
+  <p style="font-size:12.8px;line-height:1.55">${x.f}</p>
+  <p style="font-size:12.8px;line-height:1.55;margin-top:7px;color:var(--navy)"><strong>What this means for us:</strong> ${x.w}</p>
+  <div class="intel-task"><strong>Task:</strong> ${x.task}</div></div>`;
+}
+
+/* ---------- Team performance ---------- */
+const PLAN={dining:{posts:34,stories:40},hospitality:{posts:26,stories:34},realestate:{posts:12,stories:10},marine:{posts:10,stories:8},retail:{posts:18,stories:20}};
+function teamData(b,d){
+ const P=period(),f=P.days/30;
+ const plan=PLAN[b.seg]||{posts:20,stories:20};
+ const posts=d.posts.fb+d.posts.ig+d.posts.tt+d.posts.yt;
+ const target=Math.max(1,Math.round(plan.posts*f));
+ const storyTarget=Math.max(1,Math.round(plan.stories*f));
+ const r=rng(hash(b.n+"team"+P.days));
+ return {posts,target,pubPct:Math.round(posts/target*100),
+  stories:d.stories,storyTarget,storyPct:Math.round(d.stories/storyTarget*100),
+  respRate:d.local.respRate,respHrs:d.local.respHrs,
+  taskDone:Math.round(45+r()*50),blog:d.posts.blog,blogTarget:Math.max(1,Math.round(4*f)),
+  emails:d.posts.email,emailTarget:Math.max(1,Math.round(4*f))};
+}
+/* segment-specific KPI labels so a marina is never measured like a restaurant */
+const SEGKPI={
+ dining:{primary:"Covers & reservations",intent:"Menu views + calls",secondary:"Reservation-page visits"},
+ hospitality:{primary:"Bookings & inquiries",intent:"Booking-page visits + direction requests",secondary:"Room-page visits"},
+ realestate:{primary:"Qualified leads & consultations",intent:"Portfolio views + contact starts",secondary:"Project-page visits"},
+ marine:{primary:"Service inquiries & slip demand",intent:"Service and slip page visits + calls",secondary:"Boat-sales inquiries"},
+ retail:{primary:"Transactions",intent:"Shop-page visits",secondary:"New-arrivals views"},
+ portfolio:{primary:"Actions",intent:"Intent signals",secondary:"Page visits"}
+};
 
 /* ---------- Traffic mix (shared by Website tab and Leaderboard) ---------- */
 function trafficMix(b){
@@ -1616,7 +1796,10 @@ function renderAI(b,d){
   ${recs.map(r=>`<tr><td><strong>${r.ice}</strong></td><td><strong>${r.h}</strong></td><td>${r.why}</td><td>${r.owner}</td><td>${r.eff}</td></tr>`).join("")}
   </tbody></table></div>
   <div class="card insight" style="margin-top:14px"><span class="tag">Automation</span><h3>${trigger.h}</h3><p>${trigger.p}</p></div>
-  <h2>Industry news → what it means for us <span class="note">each item carries a source link and verified date; items expire for review quarterly</span></h2>
+  <h2>Marketing intelligence feed <span class="note">cumulative — every item carries its source, date, what it means for this business, and a task. Learning daily from Search Engine Land, Search Engine Journal, Moz, Semrush, Google Search Central + /search/news, Pew Research, Nielsen, and Google Trends.</span></h2>
+  <div class="grid intelgrid">${intelFor(b).map(intelCard).join("")}</div>
+  <p class="caption" style="margin-bottom:20px">Filtered to ${SEGLABEL[b.seg].toLowerCase()} relevance — ${intelFor(b).length} of ${INTEL.length} items apply to this business. Production ingests these feeds daily; an LLM drafts the card and a human approves before it publishes.</p>
+  <h2>Platform &amp; policy changes <span class="note">source-linked, verified dates</span></h2>
   ${news.map(n=>`<div class="news"><span class="date">${n.d} · verified Jul 2026</span><h3>${n.h}</h3><p>${n.p}</p><div class="means">${n.m}</div></div>`).join("")}`;
  destroyCharts();
 }
