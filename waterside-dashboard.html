@@ -86,6 +86,18 @@
   .intelgrid{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
   .intel{border-left:3px solid var(--steel)}
   .intel-task{margin-top:10px;padding-top:9px;border-top:1px solid #eef1f4;font-size:12.5px;color:var(--ink);line-height:1.5}
+  .editbar{background:#fff8e6;border:1px solid #f0dcae;padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:#7a5c10;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  .editbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .editbar button{border:1px solid var(--steel);background:#fff;color:var(--navy);padding:6px 11px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:inherit}
+  .editbar button:hover{background:var(--steel-soft)}
+  .blk.editing{outline:1px dashed var(--steel);outline-offset:3px;margin-bottom:16px;position:relative}
+  .blk-hidden{opacity:.42}
+  .blkbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--steel-soft);padding:6px 10px;margin-bottom:8px;flex-wrap:wrap}
+  .blkname{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--navy)}
+  .blkbtns{display:flex;gap:4px}
+  .blkbar button,.cardbar button{border:1px solid var(--steel);background:#fff;color:var(--navy);padding:3px 8px;font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:inherit}
+  .blkbar button:disabled{opacity:.35;cursor:default}
+  .cardbar{display:flex;gap:3px;margin-bottom:8px}
   .qstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:16px}
   .qstrip a{background:#fff;padding:11px 12px;text-decoration:none;display:block}
   .qstrip a:hover{background:var(--steel-soft)}
@@ -164,6 +176,7 @@
       <option value="owner">Owner view</option>
       <option value="admin">Admin view</option>
     </select>
+    <label id="editWrap" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--navy);border:1px solid var(--steel);padding:8px 11px;cursor:pointer"><input type="checkbox" id="editToggle" style="margin:0"> Edit layout</label>
   </div>
 </header>
 <nav>
@@ -1804,8 +1817,155 @@ function renderAI(b,d){
  destroyCharts();
 }
 
+/* ================= LAYOUT ENGINE =================
+   Blocks are detected from each view's own headings — no view code needs to know about layout.
+   Config: {views:{viewId:{order:[],hidden:[],cards:{blockId:{hidden:[],order:[]}}}},custom:[]}
+   Persists to localStorage when available, memory otherwise, and exports/imports as JSON. */
+const LKEY="watersidePortalLayout_v1";
+let layout={views:{},custom:[]};
+try{const raw=localStorage.getItem(LKEY);if(raw)layout=JSON.parse(raw)}catch(e){}
+function saveLayout(){try{localStorage.setItem(LKEY,JSON.stringify(layout))}catch(e){}}
+function LV(v){layout.views[v]=layout.views[v]||{order:[],hidden:[],cards:{}};return layout.views[v]}
+function slug(t){return (t||"block").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,44)||"block"}
+function cardLabel(c){const l=c.querySelector(".label span");return l?l.textContent.trim():(c.querySelector("h2,h3")?c.querySelector("h2,h3").textContent.trim():"")}
+
+/* split a rendered view into sections at each h2, wrap them, then apply saved order + visibility */
+function applyLayout(viewId){
+ const el=document.getElementById("view-"+viewId);if(!el)return;
+ const cfg=LV(viewId);
+ const kids=[...el.children].filter(n=>!n.classList.contains("blk"));
+ if(!kids.length)return;
+ const blocks=[];let cur={title:"Summary & controls",nodes:[]};
+ kids.forEach(n=>{
+  if(n.tagName==="H2"){ if(cur.nodes.length)blocks.push(cur);
+    const c=n.cloneNode(true);c.querySelectorAll(".note").forEach(x=>x.remove());
+    cur={title:c.textContent.replace(/\s+/g," ").trim(),nodes:[n]}; }
+  else cur.nodes.push(n);
+ });
+ if(cur.nodes.length)blocks.push(cur);
+ const seen={};
+ blocks.forEach(b=>{let id=slug(b.title.split("·")[0]);if(seen[id])id+="-"+(++seen[id]);else seen[id]=1;b.id=id;});
+ el.innerHTML="";
+ const made={};
+ blocks.forEach(b=>{
+  const sec=document.createElement("section");
+  sec.className="blk";sec.dataset.blk=b.id;sec.dataset.title=b.title;
+  b.nodes.forEach(n=>sec.appendChild(n));
+  made[b.id]=sec;
+ });
+ /* custom blocks authored in the editor */
+ (layout.custom||[]).filter(c=>c.view===viewId).forEach(c=>{
+  const sec=document.createElement("section");
+  sec.className="blk";sec.dataset.blk=c.id;sec.dataset.title=c.title;sec.dataset.custom="1";
+  sec.innerHTML=`<h2>${c.title}</h2><div class="card"><p style="font-size:13px;line-height:1.6;white-space:pre-wrap">${c.body.replace(/</g,"&lt;")}</p></div>`;
+  made[c.id]=sec;
+ });
+ const ids=Object.keys(made);
+ const ordered=[...(cfg.order||[]).filter(x=>ids.includes(x)),...ids.filter(x=>!(cfg.order||[]).includes(x))];
+ cfg.order=ordered;
+ ordered.forEach(id=>{
+  const sec=made[id];
+  if((cfg.hidden||[]).includes(id)){sec.style.display="none";}
+  /* card-level visibility and order inside this block */
+  const cc=(cfg.cards||{})[id];
+  if(cc){
+   sec.querySelectorAll(".grid").forEach(g=>{
+    const cards=[...g.children].filter(x=>x.classList.contains("card"));
+    if(!cards.length)return;
+    cards.forEach(c=>{if((cc.hidden||[]).includes(cardLabel(c)))c.style.display="none"});
+    if(cc.order&&cc.order.length){
+     const byL={};cards.forEach(c=>byL[cardLabel(c)]=c);
+     [...cc.order].reverse().forEach(l=>{if(byL[l])g.insertBefore(byL[l],g.firstChild)});
+    }
+   });
+  }
+  el.appendChild(sec);
+ });
+ if(state.editing)decorateEditor(viewId,el,cfg);
+}
+
+/* on-page edit controls */
+function decorateEditor(viewId,el,cfg){
+ const secs=[...el.querySelectorAll("section.blk")];
+ secs.forEach((sec,i)=>{
+  const hidden=(cfg.hidden||[]).includes(sec.dataset.blk);
+  sec.classList.add("editing");if(hidden)sec.classList.add("blk-hidden");
+  const bar=document.createElement("div");bar.className="blkbar";
+  bar.innerHTML=`<span class="blkname">${sec.dataset.title}${sec.dataset.custom?' <span class="pill info">Custom</span>':""}</span>
+   <span class="blkbtns">
+    <button data-mv="up" ${i===0?"disabled":""} title="Move up" aria-label="Move up">↑</button>
+    <button data-mv="down" ${i===secs.length-1?"disabled":""} title="Move down" aria-label="Move down">↓</button>
+    <button data-tg="1" title="${hidden?"Show":"Hide"}" aria-label="${hidden?"Show":"Hide"} block">${hidden?"Show":"Hide"}</button>
+    ${sec.dataset.custom?'<button data-del="1" title="Delete" aria-label="Delete block">Delete</button>':""}
+   </span>`;
+  sec.insertBefore(bar,sec.firstChild);
+  if(hidden)sec.style.display="";
+  bar.querySelector('[data-mv="up"]').onclick=()=>{const o=cfg.order,i2=o.indexOf(sec.dataset.blk);if(i2>0){o.splice(i2-1,0,o.splice(i2,1)[0]);saveLayout();render()}};
+  bar.querySelector('[data-mv="down"]').onclick=()=>{const o=cfg.order,i2=o.indexOf(sec.dataset.blk);if(i2<o.length-1){o.splice(i2+1,0,o.splice(i2,1)[0]);saveLayout();render()}};
+  bar.querySelector('[data-tg]').onclick=()=>{cfg.hidden=cfg.hidden||[];const b=sec.dataset.blk;const i2=cfg.hidden.indexOf(b);i2<0?cfg.hidden.push(b):cfg.hidden.splice(i2,1);saveLayout();render()};
+  const del=bar.querySelector('[data-del]');
+  if(del)del.onclick=()=>{layout.custom=layout.custom.filter(c=>c.id!==sec.dataset.blk);cfg.order=cfg.order.filter(x=>x!==sec.dataset.blk);saveLayout();render()};
+  /* card controls */
+  sec.querySelectorAll(".grid").forEach(g=>{
+   const cards=[...g.children].filter(x=>x.classList.contains("card"));
+   cards.forEach((c,ci)=>{
+    const l=cardLabel(c);if(!l)return;
+    const cc=(cfg.cards||{})[sec.dataset.blk]||{};
+    const chid=(cc.hidden||[]).includes(l);
+    if(chid){c.style.display="";c.classList.add("blk-hidden")}
+    const cb=document.createElement("div");cb.className="cardbar";
+    cb.innerHTML=`<button data-cmv="left" title="Move left" aria-label="Move left">←</button><button data-cmv="right" title="Move right" aria-label="Move right">→</button><button data-ctg="1" title="${chid?"Show":"Hide"} card">${chid?"Show":"Hide"}</button>`;
+    c.insertBefore(cb,c.firstChild);
+    const order=()=>{cfg.cards=cfg.cards||{};const k=cfg.cards[sec.dataset.blk]=cfg.cards[sec.dataset.blk]||{hidden:[],order:[]};
+     if(!k.order.length)k.order=cards.map(cardLabel);return k};
+    cb.querySelector('[data-cmv="left"]').onclick=()=>{const k=order();const i2=k.order.indexOf(l);if(i2>0){k.order.splice(i2-1,0,k.order.splice(i2,1)[0]);saveLayout();render()}};
+    cb.querySelector('[data-cmv="right"]').onclick=()=>{const k=order();const i2=k.order.indexOf(l);if(i2<k.order.length-1){k.order.splice(i2+1,0,k.order.splice(i2,1)[0]);saveLayout();render()}};
+    cb.querySelector('[data-ctg]').onclick=()=>{const k=order();k.hidden=k.hidden||[];const i2=k.hidden.indexOf(l);i2<0?k.hidden.push(l):k.hidden.splice(i2,1);saveLayout();render()};
+   });
+  });
+ });
+}
+
+/* editor toolbar shown above the view when editing */
+function editorBar(viewId){
+ const cfg=LV(viewId);
+ const hiddenB=(cfg.hidden||[]).length, hiddenC=Object.values(cfg.cards||{}).reduce((a,x)=>a+((x.hidden||[]).length),0);
+ return `<div class="editbar">
+  <strong>Layout editor</strong> — use the controls on each block and card. ${hiddenB} block${hiddenB===1?"":"s"} and ${hiddenC} card${hiddenC===1?"":"s"} hidden on this page.
+  <span class="editbtns">
+   <button id="addBlk">+ Add content block</button>
+   <button id="resetView">Reset this page</button>
+   <button id="expLayout">Export JSON</button>
+   <button id="impLayout">Import JSON</button>
+   <button id="doneEdit">Done</button>
+  </span></div>`;
+}
+function wireEditorBar(viewId){
+ const cfg=LV(viewId);
+ const q=id=>document.getElementById(id);
+ if(q("addBlk"))q("addBlk").onclick=()=>{
+  const t=prompt("Block title","Team note");if(!t)return;
+  const bd=prompt("Content (plain text; line breaks kept)","");if(bd===null)return;
+  const id="custom-"+Date.now().toString(36);
+  layout.custom=layout.custom||[];layout.custom.push({id,view:viewId,title:t,body:bd});
+  cfg.order=cfg.order||[];cfg.order.push(id);saveLayout();render();
+ };
+ if(q("resetView"))q("resetView").onclick=()=>{if(confirm("Reset this page's layout to default?")){layout.views[viewId]={order:[],hidden:[],cards:{}};layout.custom=(layout.custom||[]).filter(c=>c.view!==viewId);saveLayout();render()}};
+ if(q("expLayout"))q("expLayout").onclick=()=>{
+  const blob=new Blob([JSON.stringify(layout,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="waterside-portal-layout.json";a.click();
+ };
+ if(q("impLayout"))q("impLayout").onclick=()=>{
+  const inp=document.createElement("input");inp.type="file";inp.accept="application/json";
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();
+   rd.onload=()=>{try{layout=JSON.parse(rd.result);saveLayout();render()}catch(e){alert("That file isn't valid layout JSON.")}};rd.readAsText(f)};
+  inp.click();
+ };
+ if(q("doneEdit"))q("doneEdit").onclick=()=>{state.editing=false;document.getElementById("editToggle").checked=false;render()};
+}
+
 /* ---------- App state & wiring ---------- */
-const state={brand:null,view:"exec",channel:"Instagram",cmp:"yoy",mode:"owner"};
+const state={brand:null,view:"exec",channel:"Instagram",cmp:"yoy",mode:"owner",editing:false};
 const sel=document.getElementById("companySel");
 const groups={};
 sel.add(new Option("Choose a Business",""));
@@ -1817,7 +1977,8 @@ sel.setAttribute("aria-label","Choose a Business");
 sel.onchange=()=>{state.brand=sel.value?BRANDS.find(x=>x.n===sel.value):null;render()};
 document.getElementById("rangeSel").onchange=render;
 document.getElementById("cmpSel").onchange=()=>{state.cmp=document.getElementById("cmpSel").value;render()};
-document.getElementById("modeSel").onchange=()=>{state.mode=document.getElementById("modeSel").value;render()};
+document.getElementById("modeSel").onchange=()=>{state.mode=document.getElementById("modeSel").value;if(state.mode!=="admin"){state.editing=false;document.getElementById("editToggle").checked=false}render()};
+document.getElementById("editToggle").onchange=e=>{state.editing=e.target.checked;render()};
 document.querySelectorAll("nav button").forEach(btn=>btn.onclick=()=>{
  state.view=btn.dataset.view;
  document.querySelectorAll("nav button").forEach(x=>{x.classList.toggle("active",x===btn);x.setAttribute("aria-current",x===btn?"page":"false")});
@@ -1828,7 +1989,7 @@ function render(){
  const ri=document.getElementById("rangeInfo");if(ri)ri.textContent=rangeText();
  if(!state.brand){
   ["exec","channel","web","rev2","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
-  destroyCharts();renderLanding(document.getElementById("view-"+state.view));return;
+  destroyCharts();renderLanding(document.getElementById("view-"+state.view));finishRender();return;
  }
  const b=state.brand,d=brandData(b);
  ["exec","channel","web","rev2","comp","paid","rev","demo","ai"].forEach(v=>document.getElementById("view-"+v).style.display=v===state.view?"block":"none");
@@ -1844,6 +2005,14 @@ function render(){
  if(state.view==="rev")renderRev(b,d);
  if(state.view==="demo")renderDemo(b,d);
  if(state.view==="ai")renderAI(b,d);
+ finishRender();
+}
+function finishRender(){
+ document.getElementById("editWrap").style.display=state.mode==="admin"?"flex":"none";
+ const v=state.view,el=document.getElementById("view-"+v);
+ if(state.editing){const bar=document.createElement("div");bar.innerHTML=editorBar(v);el.insertBefore(bar.firstChild,el.firstChild);}
+ applyLayout(v);
+ if(state.editing)wireEditorBar(v);
 }
 render();
 </script>
