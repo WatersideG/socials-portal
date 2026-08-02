@@ -98,6 +98,12 @@
   .blkbar button,.cardbar button{border:1px solid var(--steel);background:#fff;color:var(--navy);padding:3px 8px;font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:inherit}
   .blkbar button:disabled{opacity:.35;cursor:default}
   .cardbar{display:flex;gap:3px;margin-bottom:8px}
+  .cardpicker{background:#fff;border:1px solid var(--steel);padding:12px 14px;margin-bottom:10px}
+  .pickhd{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--navy);margin-bottom:9px}
+  .pickgrp{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:5px 0;border-top:1px solid #eef1f4}
+  .pickg{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);width:88px;flex-shrink:0}
+  .cardpicker button{border:1px solid var(--line);background:#fff;color:var(--navy);padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+  .cardpicker button:hover{border-color:var(--steel);background:var(--steel-soft)}
   .qstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:16px}
   .qstrip a{background:#fff;padding:11px 12px;text-decoration:none;display:block}
   .qstrip a:hover{background:var(--steel-soft)}
@@ -1817,6 +1823,44 @@ function renderAI(b,d){
  destroyCharts();
 }
 
+/* ---------- Card catalog: metrics that can be added to any block ---------- */
+const CARD_CATALOG=[
+ {g:"Outcomes",id:"outcomes",l:"Outcomes",f:(b,d)=>[fmt(d.web.keyEvents),BENCH[b.seg].result+" this period"]},
+ {g:"Outcomes",id:"leads",l:"Total leads",f:(b,d)=>[fmt(d.leads.total),"HubSpot contacts created"]},
+ {g:"Outcomes",id:"leadform",l:"Leads — website form",f:(b,d)=>[fmt(d.leads.sources[0][1]),"Website email form"]},
+ {g:"Outcomes",id:"leadphone",l:"Leads — phone calls",f:(b,d)=>[fmt(d.leads.sources[1][1]),"Tracked phone calls"]},
+ {g:"Outcomes",id:"conv",l:"Visit-to-action rate",f:(b,d)=>[pct(d.conv.web),"Industry ≈ "+pct(BENCH[b.seg].webConv)]},
+ {g:"Revenue",id:"mtd",l:"Revenue month to date",f:(b,d)=>["$"+fmt(revData(b).totMtd),"All revenue centers"]},
+ {g:"Revenue",id:"paidspend",l:"Paid spend",f:(b,d)=>["$"+fmt(campaigns(b).reduce((a,c)=>a+c.spent,0)),"Flight-to-date across platforms"]},
+ {g:"Revenue",id:"rpe",l:"Email revenue per send",f:(b,d)=>["$"+d.email.rpe.toFixed(2),"$0.12 beats the median"]},
+ {g:"Website",id:"visits",l:"Website visits",f:(b,d)=>[fmt(d.web.sessions),"Sessions this period"]},
+ {g:"Website",id:"unique",l:"Unique visitors",f:(b,d)=>[fmt(Math.round(d.web.sessions*0.74)),"People, deduplicated"]},
+ {g:"Website",id:"engrate",l:"Engaged visits",f:(b,d)=>[pct(d.web.engRate,0),"GA4 engagement rate"]},
+ {g:"Website",id:"bounce",l:"Bounce rate",f:(b,d)=>[pct(100-d.web.engRate,0),"Left without engaging"]},
+ {g:"Website",id:"lh",l:"Site performance",f:(b,d)=>[d.web.perfScore+"/100","Speed + engagement + conversion"]},
+ {g:"Search",id:"impr",l:"Times seen in Google",f:(b,d)=>[fmt(d.gsc.impr),"Search impressions"]},
+ {g:"Search",id:"clicks",l:"Clicks from Google",f:(b,d)=>[fmt(d.gsc.clicks),"Organic clicks"]},
+ {g:"Search",id:"gsctr",l:"Organic click rate",f:(b,d)=>[pct(d.ctr.gsc),"Clicks ÷ impressions"]},
+ {g:"Search",id:"branded",l:"Branded searches",f:(b,d)=>[pct(d.gsc.branded,0),"Share of queries that are our name"]},
+ {g:"Search",id:"aisov",l:"AI share of voice",f:(b,d)=>[pct(d.aio.sov,1),d.aio.cited+" of 12 questions cite us"]},
+ {g:"Social",id:"aud",l:"Total audience",f:(b,d)=>[fmt(d.followers.fb+d.followers.ig+d.followers.yt+d.followers.tt),"Followers, all channels"]},
+ {g:"Social",id:"iger",l:"Instagram engagement",f:(b,d)=>[pct(d.er.ig),"Median "+pct(BENCH[b.seg].igER)]},
+ {g:"Social",id:"tter",l:"TikTok engagement",f:(b,d)=>[pct(d.er.tt),"Median "+pct(BENCH[b.seg].ttER)]},
+ {g:"Social",id:"likes",l:"Likes (all channels)",f:(b,d)=>[fmt(["fb","ig","tt"].reduce((a,c)=>a+likeShare(b,d,c).likes,0)),"Lightest engagement signal"]},
+ {g:"Social",id:"shares",l:"Shares (all channels)",f:(b,d)=>[fmt(["fb","ig","tt"].reduce((a,c)=>a+likeShare(b,d,c).shares,0)),"Strongest organic signal"]},
+ {g:"Social",id:"posts",l:"Posts published",f:(b,d)=>[d.posts.fb+d.posts.ig+d.posts.tt+d.posts.yt,"All channels this period"]},
+ {g:"Reputation",id:"rating",l:"Google rating",f:(b,d)=>[d.local.rating.toFixed(1)+"★",fmt(d.local.reviews)+" reviews"]},
+ {g:"Reputation",id:"vel",l:"New reviews (30 days)",f:(b,d)=>[d.local.vel30,"Velocity beats total count"]},
+ {g:"Reputation",id:"resp",l:"Review response rate",f:(b,d)=>[pct(d.local.respRate,0),"Median reply "+d.local.respHrs+"h"]},
+ {g:"Reputation",id:"calls",l:"Calls from profile",f:(b,d)=>[fmt(d.local.calls),"Google Business Profile"]},
+ {g:"Reputation",id:"dir",l:"Direction requests",f:(b,d)=>[fmt(d.local.directions),"Intent signal"]},
+ {g:"Email",id:"subs",l:"Email subscribers",f:(b,d)=>[fmt(d.email.list),"+"+fmt(newSubs(b,d))+" new this period"]},
+ {g:"Email",id:"eclick",l:"Email click rate",f:(b,d)=>[pct(d.ctr.email),"Median "+pct(BENCH[b.seg].emailClick)]},
+ {g:"Team",id:"pub",l:"Publishing vs plan",f:(b,d)=>[teamData(b,d).pubPct+"%",teamData(b,d).posts+" of "+teamData(b,d).target+" posts"]},
+ {g:"Team",id:"taskdone",l:"Task completion",f:(b,d)=>[teamData(b,d).taskDone+"%","Assigned tasks closed on time"]}
+];
+const CATBYID={};CARD_CATALOG.forEach(c=>CATBYID[c.id]=c);
+
 /* ================= LAYOUT ENGINE =================
    Blocks are detected from each view's own headings — no view code needs to know about layout.
    Config: {views:{viewId:{order:[],hidden:[],cards:{blockId:{hidden:[],order:[]}}}},custom:[]}
@@ -1860,6 +1904,20 @@ function applyLayout(viewId){
   sec.innerHTML=`<h2>${c.title}</h2><div class="card"><p style="font-size:13px;line-height:1.6;white-space:pre-wrap">${c.body.replace(/</g,"&lt;")}</p></div>`;
   made[c.id]=sec;
  });
+ /* cards added from the catalog or authored custom */
+ (layout.added||[]).filter(a=>a.view===viewId).forEach(a=>{
+  const sec=made[a.blk];if(!sec)return;
+  let g=sec.querySelector(".grid");
+  if(!g){g=document.createElement("div");g.className="grid kpis";const h=sec.querySelector("h2");h?h.after(g):sec.appendChild(g);}
+  let html2;
+  if(a.custom){html2=kpi(a.custom.title,a.custom.value||"—","","",a.custom.note||"",null,true,"manual");}
+  else{const c=CATBYID[a.cardId];if(!c)return;
+   let v=["—",""];try{v=c.f(state.brand,brandData(state.brand))}catch(e){}
+   html2=kpi(c.l,v[0],"","",v[1],null,true);}
+  const tmp=document.createElement("div");tmp.innerHTML=html2;
+  const node=tmp.firstElementChild;node.dataset.added=a.uid;
+  g.appendChild(node);
+ });
  const ids=Object.keys(made);
  const ordered=[...(cfg.order||[]).filter(x=>ids.includes(x)),...ids.filter(x=>!(cfg.order||[]).includes(x))];
  cfg.order=ordered;
@@ -1895,6 +1953,7 @@ function decorateEditor(viewId,el,cfg){
    <span class="blkbtns">
     <button data-mv="up" ${i===0?"disabled":""} title="Move up" aria-label="Move up">↑</button>
     <button data-mv="down" ${i===secs.length-1?"disabled":""} title="Move down" aria-label="Move down">↓</button>
+    <button data-addc="1" title="Add a card to this block" aria-label="Add card">+ Card</button>
     <button data-tg="1" title="${hidden?"Show":"Hide"}" aria-label="${hidden?"Show":"Hide"} block">${hidden?"Show":"Hide"}</button>
     ${sec.dataset.custom?'<button data-del="1" title="Delete" aria-label="Delete block">Delete</button>':""}
    </span>`;
@@ -1902,6 +1961,32 @@ function decorateEditor(viewId,el,cfg){
   if(hidden)sec.style.display="";
   bar.querySelector('[data-mv="up"]').onclick=()=>{const o=cfg.order,i2=o.indexOf(sec.dataset.blk);if(i2>0){o.splice(i2-1,0,o.splice(i2,1)[0]);saveLayout();render()}};
   bar.querySelector('[data-mv="down"]').onclick=()=>{const o=cfg.order,i2=o.indexOf(sec.dataset.blk);if(i2<o.length-1){o.splice(i2+1,0,o.splice(i2,1)[0]);saveLayout();render()}};
+  bar.querySelector('[data-addc]').onclick=()=>{
+   const ex=sec.querySelector(".cardpicker");if(ex){ex.remove();return}
+   const cc=(cfg.cards||{})[sec.dataset.blk]||{};
+   const hid=(cc.hidden||[]);
+   const groups={};CARD_CATALOG.forEach(c=>{(groups[c.g]=groups[c.g]||[]).push(c)});
+   const p=document.createElement("div");p.className="cardpicker";
+   p.innerHTML=`<div class="pickhd">Add a card to “${sec.dataset.title}”</div>
+    ${hid.length?`<div class="pickgrp"><span class="pickg">Hidden here — click to restore</span>${hid.map(h=>`<button data-restore="${h.replace(/"/g,"&quot;")}">${h}</button>`).join("")}</div>`:""}
+    ${Object.entries(groups).map(([g,list])=>`<div class="pickgrp"><span class="pickg">${g}</span>${list.map(c=>`<button data-add="${c.id}">${c.l}</button>`).join("")}</div>`).join("")}
+    <div class="pickgrp"><span class="pickg">Custom</span><button data-addcustom="1">+ Custom card…</button></div>`;
+   bar.after(p);
+   p.querySelectorAll("[data-add]").forEach(btn=>btn.onclick=()=>{
+    layout.added=layout.added||[];
+    layout.added.push({uid:"a"+Date.now().toString(36),view:viewId,blk:sec.dataset.blk,cardId:btn.dataset.add});
+    saveLayout();render();});
+   p.querySelectorAll("[data-restore]").forEach(btn=>btn.onclick=()=>{
+    const k=cfg.cards[sec.dataset.blk];k.hidden=k.hidden.filter(x=>x!==btn.dataset.restore);saveLayout();render();});
+   const cu=p.querySelector("[data-addcustom]");
+   if(cu)cu.onclick=()=>{
+    const t=prompt("Card title","Custom metric");if(!t)return;
+    const v=prompt("Value to display (or leave blank for —)","");
+    const n=prompt("Small note under the value","");
+    layout.added=layout.added||[];
+    layout.added.push({uid:"a"+Date.now().toString(36),view:viewId,blk:sec.dataset.blk,custom:{title:t,value:v,note:n}});
+    saveLayout();render();};
+  };
   bar.querySelector('[data-tg]').onclick=()=>{cfg.hidden=cfg.hidden||[];const b=sec.dataset.blk;const i2=cfg.hidden.indexOf(b);i2<0?cfg.hidden.push(b):cfg.hidden.splice(i2,1);saveLayout();render()};
   const del=bar.querySelector('[data-del]');
   if(del)del.onclick=()=>{layout.custom=layout.custom.filter(c=>c.id!==sec.dataset.blk);cfg.order=cfg.order.filter(x=>x!==sec.dataset.blk);saveLayout();render()};
@@ -1914,13 +1999,17 @@ function decorateEditor(viewId,el,cfg){
     const chid=(cc.hidden||[]).includes(l);
     if(chid){c.style.display="";c.classList.add("blk-hidden")}
     const cb=document.createElement("div");cb.className="cardbar";
-    cb.innerHTML=`<button data-cmv="left" title="Move left" aria-label="Move left">←</button><button data-cmv="right" title="Move right" aria-label="Move right">→</button><button data-ctg="1" title="${chid?"Show":"Hide"} card">${chid?"Show":"Hide"}</button>`;
+    const isAdded=!!c.dataset.added;
+    cb.innerHTML=`<button data-cmv="left" title="Move left" aria-label="Move left">←</button><button data-cmv="right" title="Move right" aria-label="Move right">→</button>${isAdded?'<button data-crm="1" title="Remove card">Remove</button>':`<button data-ctg="1" title="${chid?"Show":"Hide"} card">${chid?"Show":"Hide"}</button>`}`;
     c.insertBefore(cb,c.firstChild);
     const order=()=>{cfg.cards=cfg.cards||{};const k=cfg.cards[sec.dataset.blk]=cfg.cards[sec.dataset.blk]||{hidden:[],order:[]};
      if(!k.order.length)k.order=cards.map(cardLabel);return k};
     cb.querySelector('[data-cmv="left"]').onclick=()=>{const k=order();const i2=k.order.indexOf(l);if(i2>0){k.order.splice(i2-1,0,k.order.splice(i2,1)[0]);saveLayout();render()}};
     cb.querySelector('[data-cmv="right"]').onclick=()=>{const k=order();const i2=k.order.indexOf(l);if(i2<k.order.length-1){k.order.splice(i2+1,0,k.order.splice(i2,1)[0]);saveLayout();render()}};
-    cb.querySelector('[data-ctg]').onclick=()=>{const k=order();k.hidden=k.hidden||[];const i2=k.hidden.indexOf(l);i2<0?k.hidden.push(l):k.hidden.splice(i2,1);saveLayout();render()};
+    const tg=cb.querySelector('[data-ctg]');
+    if(tg)tg.onclick=()=>{const k=order();k.hidden=k.hidden||[];const i2=k.hidden.indexOf(l);i2<0?k.hidden.push(l):k.hidden.splice(i2,1);saveLayout();render()};
+    const rm=cb.querySelector('[data-crm]');
+    if(rm)rm.onclick=()=>{layout.added=(layout.added||[]).filter(a=>a.uid!==c.dataset.added);saveLayout();render()};
    });
   });
  });
@@ -1931,7 +2020,7 @@ function editorBar(viewId){
  const cfg=LV(viewId);
  const hiddenB=(cfg.hidden||[]).length, hiddenC=Object.values(cfg.cards||{}).reduce((a,x)=>a+((x.hidden||[]).length),0);
  return `<div class="editbar">
-  <strong>Layout editor</strong> — use the controls on each block and card. ${hiddenB} block${hiddenB===1?"":"s"} and ${hiddenC} card${hiddenC===1?"":"s"} hidden on this page.
+  <strong>Layout editor</strong> — <strong>+ Card</strong> on any block adds metrics; ← → move cards; Hide removes them. ${hiddenB} block${hiddenB===1?"":"s"} and ${hiddenC} card${hiddenC===1?"":"s"} hidden, ${(layout.added||[]).filter(a=>a.view===viewId).length} card${(layout.added||[]).filter(a=>a.view===viewId).length===1?"":"s"} added on this page.
   <span class="editbtns">
    <button id="addBlk">+ Add content block</button>
    <button id="resetView">Reset this page</button>
@@ -1950,7 +2039,7 @@ function wireEditorBar(viewId){
   layout.custom=layout.custom||[];layout.custom.push({id,view:viewId,title:t,body:bd});
   cfg.order=cfg.order||[];cfg.order.push(id);saveLayout();render();
  };
- if(q("resetView"))q("resetView").onclick=()=>{if(confirm("Reset this page's layout to default?")){layout.views[viewId]={order:[],hidden:[],cards:{}};layout.custom=(layout.custom||[]).filter(c=>c.view!==viewId);saveLayout();render()}};
+ if(q("resetView"))q("resetView").onclick=()=>{if(confirm("Reset this page's layout to default?")){layout.views[viewId]={order:[],hidden:[],cards:{}};layout.custom=(layout.custom||[]).filter(c=>c.view!==viewId);layout.added=(layout.added||[]).filter(c=>c.view!==viewId);saveLayout();render()}};
  if(q("expLayout"))q("expLayout").onclick=()=>{
   const blob=new Blob([JSON.stringify(layout,null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="waterside-portal-layout.json";a.click();
